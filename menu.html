@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cá nhân</title>
+    <title>Menu</title>
 
     <!-- Boostrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
@@ -19,6 +19,8 @@
     
 </head>
 <body>
+
+    <div class="order-form"></div>
 
     <div class="page-wrapper">
         <header class="py-4">
@@ -51,13 +53,11 @@
                 </ul>
             </div>
         </header>
-
-        <div class="page-content">
-            <div class="container">
-                <h3>Danh sách đơn hàng</h3>
-                <div class="order-list"></div>
-            </div>
-        </div>
+            
+        <section class="page-content container">
+            <h3 class="mt-4">Uống gì đây?</h3>
+            <div class="product-list row py-4"></div>
+        </section>
 
         <footer>
             <div class="container">
@@ -119,7 +119,12 @@
     </script>
     <script src="./src/js/firebase-config.js"></script>
     <script src="./src/js/guest.js"></script>
+    <script src="./src/js/get-product.js"></script>
+    <script>
+        const productList = document.querySelector('.product-list');
+        // Gọi hàm getProductList
+        getProductList(productList)
+    </script>
     <script src="./src/js/check_session.js"></script>
-    <script src="./src/js/order.js"></script>
 </body>
 </html>

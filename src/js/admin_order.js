@@ -6,8 +6,13 @@ function loadOrders() {
         .then((querySnapshot) => {
             querySnapshot.forEach((doc) => {
                 const orderItem = doc.data();
-                
                 const orderId = doc.id; // Lấy ID của tài liệu
+                
+                // // Nếu trạng thái đơn hàng là đã hủy thì không hiển thị
+                // if (orderItem.status === 3) {
+                //     return;
+                // }
+
                 htmls += `
                     <tr class="product-item text-center">
                         <th scope="row">${index}</th>

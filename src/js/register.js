@@ -41,7 +41,7 @@ function handleRegister(event) {
             db.collection("users").add(userData)
                 .then((docRef) => {
                     alert("Đăng ký thành công");
-                    window.location.href = "/src/pages/login.html";
+                    window.location.href = "/login.html";
                     console.log("Document written with ID: ", docRef.id);
                 })
                 .catch((error) => {

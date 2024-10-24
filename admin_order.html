@@ -21,16 +21,20 @@
     
     <div class="page-wrapper row">
         <div class="sidebar col-md-2">
-            <h1 class="text-center text-white py-4">Logo</h1>
+            <div class="logo text-center my-4">
+                <a href="/">
+                    <img src="./src/img/logo.png" alt="">
+                </a>
+            </div>
             <ul class="menu p-0">
                 <li>
-                    <a href="/" class="d-block text-white py-2 px-4 my-2">Sản phẩm</a>
+                    <a href="/admin.html" class="d-block text-white py-2 px-4 my-2">Sản phẩm</a>
                 </li>
                 <li>
                     <a href="./admin_order.html" class="d-block text-white py-2 px-4 my-2">Đơn hàng</a>
                 </li>
                 <li>
-                    <a href="./admin.html" class="d-block text-white py-2 px-4 my-2">Danh mục</a>
+                    <a href="/" class="d-block text-white py-2 px-4 my-2">Danh mục</a>
                 </li>
                 <li>
                     <a href="/" class="d-block text-white py-2 px-4 my-2">Quyền</a>
@@ -84,10 +88,10 @@
     <script src="./src/js/firebase-config.js"></script>
     <script src="./src/js/check_session.js"></script>
     <script>
-        // Gọi hàm check role
+        // Gọi hàm kiểm tra đã đăng nhập chưa
         checkSession();
 
-        // Kiểm tra quyền
+        // Kiểm tra quyền của user
         document.addEventListener('DOMContentLoaded', function () {
             const userSession = JSON.parse(localStorage.getItem('user_session'));
 

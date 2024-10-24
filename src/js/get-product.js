@@ -1,9 +1,10 @@
 // Hiển thị danh sách sản phẩm
-const productList = document.querySelector('.product-list');
-
-function getProductList() {
+function getProductList(container, limit) {
     let htmls = '';
-    db.collection('products').get()
+    db.collection('products')
+        .orderBy('createdAt', 'desc') // Lấy sản phẩm mới nhất
+        .limit(limit) // Giới hạn chỉ lấy 4 sản phẩm
+        .get()
         .then((querySnapshot) => {
             querySnapshot.forEach((doc) => {
                 const product = doc.data();
@@ -24,7 +25,7 @@ function getProductList() {
                     </div>
                 `;
             });
-            productList.innerHTML = htmls;
+            container.innerHTML = htmls;
 
             let btnOrder = document.querySelectorAll('.btn-order');
             btnOrder.forEach(btn => {
@@ -40,8 +41,6 @@ function getProductList() {
             console.error("Error fetching products: ", error);
         });
 }
-
-getProductList();
 
 function showOrderForm(productId) {
     let orderForm = document.querySelector(".order-form");

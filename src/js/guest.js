@@ -12,11 +12,14 @@ if (userSession) {
         // Xử lý đang xuất
         document.getElementById('logout-btn').addEventListener('click', function () {
             if (confirm("Bạn có chắc chắn muốn đăng xuất")) {
-                // Xóa thông tin phiên người dùng khỏi localStorage
-                localStorage.removeItem('user_session');
-
-                // Chuyển hướng tới trang đăng nhập
-                window.location.href = "../../../index.html";
+                firebase.auth().signOut().then(() => {
+                    // Xóa thông tin phiên người dùng khỏi localStorage
+                    localStorage.removeItem('user_session');
+                    // Chuyển hướng tới trang đăng nhập
+                    window.location.href = "/index.html";
+                }).catch((error) => {
+                    console.log("Lỗi đăng xuất");
+                });
             }
         });
     }

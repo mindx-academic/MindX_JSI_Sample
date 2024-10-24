@@ -24,17 +24,17 @@
         <header class="py-4">
             <div class="container d-flex justify-content-between">
                 <div class="logo">
-                    <img src="./src/img/logo.png.png" alt="">
+                    <img src="./src/img/logo.png" alt="">
                 </div>
                 <ul class="nav pe-4 align-items-center">
                     <li class="nav-item">
                         <a href="/" class="nav-link">Trang chủ</a>
                     </li>
                     <li class="nav-item">
-                        <a href="" class="nav-link">Menu</a>
+                        <a href="/menu.html" class="nav-link">Menu</a>
                     </li>
                     <li class="nav-item">
-                        <a href="" class="nav-link ">
+                        <a href="/order.html" class="nav-link">
                             <span></span>
                             <i class="fa-light fa-bag-shopping icon"></i>
                         </a>
@@ -44,8 +44,8 @@
                             <i class="fa-light fa-user icon"></i>
                         </button>
                         <ul id="author-menu-drd" class="dropdown-menu" aria-labelledby="profile-dropdown">
-                            <li><a class="dropdown-item" href="../src/pages/login.html">Đăng nhập</a></li>
-                            <li><a class="dropdown-item" href="../src/pages/register.html">Đăng ký</a></li>
+                            <li><a class="dropdown-item" href="/login.html">Đăng nhập</a></li>
+                            <li><a class="dropdown-item" href="/register.html">Đăng ký</a></li>
                         </ul>
                     </div>
                 </ul>
@@ -54,7 +54,10 @@
 
         <div class="page-content">
             <div class="container">
-                <h3>Nạp tiền vào ví</h3>
+                <a href="/menu.html" class="text-decoration-none text-black">
+                    <i class="fa-regular fa-chevron-left"></i> Về Menu
+                </a>
+                <h3 class="my-2">Nạp tiền vào ví</h3>
 
                 <div class="row">
                     <div class="col-md-6 col-12">
@@ -85,11 +88,52 @@
                         </form>
                     </div>
                     <div class="col-md-6 col-12">
-                        <h5 class="current-balance"></h5>
+                        <h5 class="current-balance"><span>Số dư: </span><span class="balance-number"></span></h5>
                     </div>
                 </div>
             </div>
         </div>
+
+        <footer>
+            <div class="container">
+                <div class="row h-100 content">
+                    <div class="col-md-4 item">
+                        <h5>About Us</h5>
+                        <ul>
+                            <li>
+                                <span><b>Địa chỉ: </b></span>
+                                <span>Tầng 5, 71 Nguyễn Chí Thanh, Phường Láng Hạ, Quận Đống Đa, Hà Nội</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4 item">
+                        <h5>Newsletter</h5>
+                        <div class="d-flex footer-form">
+                            <input type="text" placeholder="Enter email">
+                            <button class="btn btn-primary py-2 px-4">Gửi</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4 item">
+                        <h5>Follow Us</h5>
+                        <div>
+                            <h6><i>Hotline</i></h6>
+                            <ul>
+                                <li><span>Hà Nội: </span>02477717888</li>
+                                <li><span>Tp.HCM: </span>02877717789</li>
+                            </ul>
+                        </div>
+                        <div class="social-media">
+                            <a href="https://www.facebook.com/mindxschool" class="me-2 text-white">
+                                <i class="fa-brands fa-facebook-f p-2 bg-primary rounded-sm"></i>
+                            </a>
+                            <a href="https://www.facebook.com/mindxschool" class="me-2 text-white">
+                                <i class="fa-brands fa-instagram p-2 me-2 bg-primary rounded-sm"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 
 

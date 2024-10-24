@@ -5,12 +5,12 @@ function checkSession() {
         if (now > userSession.expiry) {
             // Phiên đã hết hạn, xóa dữ liệu và chuyển hướng về trang đăng nhập
             localStorage.removeItem('user_session');
-            window.location.href = "/src/pages/login.html";
+            window.location.href = "/login.html";
         } else {
             console.log("Phiên còn hợp lệ");
         }
     } else {
         // Không có phiên, chuyển hướng về trang đăng nhập
-        window.location.href = "/src/pages/login.html";
+        window.location.href = "/login.html";
     }
 }

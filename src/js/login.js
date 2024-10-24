@@ -6,7 +6,7 @@ const loginForm = document.querySelector("#login-form");
 const now = new Date().getTime();
 
 if (now < userSession?.expiry) {
-    window.location.href = "../../../index.html";
+    window.location.href = "/index.html";
 }
 
 
@@ -39,8 +39,8 @@ function handleLogin(event) {
             // Lưu vào localStorage
             localStorage.setItem('user_session', JSON.stringify(userSession));
 
-            // Chuyển hướng tới trang quản lý
-            window.location.href = "../../../index.html";
+            // Chuyển hướng tới trang chủ
+            window.location.href = "/index.html";
         })
         .catch((error) => {
             var errorCode = error.code;

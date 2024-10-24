@@ -1,5 +1,6 @@
 const productForm = document.querySelector('#product-form');
 
+//// Thêm sản phẩm  vào database
 productForm.addEventListener('submit', function (event) {
     event.preventDefault();
     const productName = document.getElementById('product_name').value;

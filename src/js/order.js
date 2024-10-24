@@ -1,5 +1,7 @@
 const orderList = document.querySelector('.order-list');
-console.log(userSession);
+
+// Gọi hàm check session 
+checkSession();
 
 function getOrderList() {
     let authorEmail = userSession?.user.email;
@@ -9,6 +11,8 @@ function getOrderList() {
         .then((querySnapshot) => {
             querySnapshot.forEach((doc) => {
                 const orderItem = doc.data();
+                console.log(orderItem);
+                
                 const createdAt = orderItem.createdAt.toDate(); // Chuyển đổi Firestore Timestamp thành đối tượng Date
                 const options = { timeZone: 'Asia/Ho_Chi_Minh', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
                 const formattedDate = createdAt.toLocaleString('vi-VN', options); // Định dạng ngày tháng và giờ theo định dạng Việt Nam
@@ -18,7 +22,7 @@ function getOrderList() {
 
                 if (orderItem.status == 0) {
                     statusString = "Chờ xác nhận";
-                    cancelButton = `<button class="btn btn-danger btn-cancel" data-order-id="${doc.id}">Hủy đơn</button>`; // Nút hủy hiển thị nếu status = 0
+                    cancelButton = `<button class="btn btn-danger btn-cancel" data-author="${orderItem.author}" data-order-id="${doc.id}" data-order-price="${orderItem.product.price * parseInt(orderItem.quantity)}">Hủy đơn</button>`; // Nút hủy hiển thị nếu status = 0
                 } else if (orderItem.status == 1) {
                     statusString = "Chờ vận chuyển";
                 } else if (orderItem.status == 2) {
@@ -51,14 +55,34 @@ function getOrderList() {
             document.querySelectorAll('.btn-cancel').forEach((button) => {
                 button.addEventListener('click', function() {
                     const orderId = this.getAttribute('data-order-id');
+                    const author = this.getAttribute('data-author');
+                    const orderPrice = parseFloat(this.getAttribute('data-order-price'));
 
                     // Xác nhận hủy đơn hàng
                     if (confirm("Bạn có chắc chắn muốn hủy đơn hàng này?")) {
                         db.collection("orders").doc(orderId).update({
-                            status: 3 // Cập nhật status thành -1 hoặc một giá trị nào đó để thể hiện rằng đơn hàng đã bị hủy
+                            status: 3 // Cập nhật status thành 3 để thể hiện rằng đơn hàng đã bị hủy
                         })
                         .then(() => {
-                            alert("Hủy đơn hàng thành công.");
+                            // Lấy thông tin user để cập nhật lại số dư ví
+                            return db.collection("users").where("email", "==", author).get();
+                        })
+                        .then((querySnapshot) => {
+                            if (!querySnapshot.empty) {
+                                const userDoc = querySnapshot.docs[0];
+                                const userData = userDoc.data();
+                                const newBalance = userData.balance + orderPrice;
+
+                                // Cập nhật lại số dư ví
+                                return db.collection("users").doc(userDoc.id).update({
+                                    balance: newBalance
+                                });
+                            } else {
+                                throw new Error("User không tồn tại");
+                            }
+                        })
+                        .then(() => {
+                            alert("Hủy đơn hàng thành công và số dư ví đã được cập nhật.");
                             getOrderList(); // Cập nhật lại danh sách đơn hàng
                         })
                         .catch((error) => {

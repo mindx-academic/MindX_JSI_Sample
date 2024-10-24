@@ -1,8 +1,15 @@
 const balanceForm = document.querySelector('#balance-form');
 const inpAmount = document.querySelector('#amount');
-const currentBalance = document.querySelector(".current-balance");
+const balanceNumber = document.querySelector(".balance-number");
 let authorEmail = userSession.user.email;
 
+function formatBalance(balance) {
+    const formattedBalance = new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND'
+    }).format(balance);
+    return formattedBalance;
+}
 
 db.collection("users").where("email", "==", authorEmail)
     .get()
@@ -11,11 +18,8 @@ db.collection("users").where("email", "==", authorEmail)
             let userDoc = doc.data();
 
             // Định dạng số tiền thành tiền Việt Nam
-            const formattedBalance = new Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND'
-            }).format(userDoc.balance);
-            currentBalance.innerHTML = "Số dư: " + formattedBalance;
+            const formattedBalance = formatBalance(userDoc.balance);
+            balanceNumber.innerHTML = formattedBalance;
         });
     })
     .catch((error) => {
@@ -33,7 +37,6 @@ balanceForm.addEventListener('submit', function (event) {
         .then((querySnapshot) => {
             querySnapshot.forEach((doc) => {
                 let userDoc = doc.data();
-                currentBalance.innerHTML = userDoc.balance;
                 let newBalance = (userDoc.balance || 0) + amount; // Tính số dư mới
                 db.collection("users").doc(doc.id).update({
                     balance: newBalance
@@ -41,6 +44,7 @@ balanceForm.addEventListener('submit', function (event) {
                     .then(() => {
                         console.log("Balance updated successfully");
                         alert("Nạp thành công");
+                        balanceNumber.innerHTML = formatBalance(newBalance);
                     })
                     .catch((error) => {
                         console.error("Error updating balance: ", error);

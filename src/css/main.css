@@ -10,6 +10,10 @@
     --color-grey-light: #dcdcdc;
 }
 
+.logo img {
+    max-width: 200px;
+}
+
 /* rounded */
 .rounded-sm {
     border-radius: 4px;
@@ -46,8 +50,14 @@
 .text-danger {
     color: var(--color-danger);
 }
+.text-black {
+    color: var(--color-black);
+}
 
 /* background */
+.bg-primary {
+    background-color: var(--color-primary) !important;
+}
 .bg-grey-light {
     background-color: var(--color-grey-light)
 }
@@ -59,7 +69,11 @@
 
 /* layout */
 .page-wrapper {
-    min-height: 100vh
+    min-height: 100vh;
+}
+.page-content {
+    min-height: 300px;
+    margin-top: 95px;
 }
 .sidebar {
     background-color: var(--color-black);
@@ -81,4 +95,3 @@
     object-fit: cover;
     border-radius: 8px;
 }
-
