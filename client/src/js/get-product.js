@@ -102,6 +102,8 @@ function showOrderForm(productId) {
 
 }
 
+
+// Xử lý order
 function handleOrder(productId, quantity, productPrice) {
     if (!userSession) {
         return;
