@@ -40,7 +40,13 @@
                 <div class="logo">
                     <img src="./src/img/logo.png" alt="">
                 </div>
-                <ul class="nav pe-4 align-items-center">
+                <!-- code mới thêm ở đây -->
+                <div class="icon-dropdown">
+                    <i class="fa-solid fa-bars text-2xl"></i>
+                    <!-- <a href="#" class="close"></a> -->
+                </div>
+                <!-- end -->
+                <ul class="nav pe-4 align-items-center hidden">
                     <li class="nav-item">
                         <a href="/" class="nav-link">Trang chủ</a>
                     </li>
@@ -74,9 +80,9 @@
                 </a>
                 <h3 class="my-2">Nạp tiền vào ví</h3>
 
-                <div class="row">
-                    <div class="col-md-6 col-12">
-                        <form action="" id="balance-form">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <form action="" id="balance-form" class="mb-4 mb-md-0">
                             <div class="form-group mt-2">
                                 <label for="">Số tài khoản</label>
                                 <input type="text" class="form-control" id="card-number" required>
@@ -160,7 +166,7 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-storage-compat.js"></script>
+
 
     <!-- Firebase Auth -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.1/firebase-auth-compat.min.js"
@@ -170,6 +176,12 @@
     <!-- Functions -->
     <script>
         let userSession = JSON.parse(localStorage.getItem('user_session'));
+
+        // Sự kiện dropdown menu 
+        const dropdown = document.querySelector(".icon-dropdown")
+        dropdown.addEventListener("click", function () {
+            document.getElementsByClassName("nav")[0].classList.toggle("hidden")
+        })
     </script>
     <script src="./src/js/firebase-config.js"></script>
     <script src="./src/js/guest.js"></script>
