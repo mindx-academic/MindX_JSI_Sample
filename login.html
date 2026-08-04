@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập - MindX Smart Class Manager</title>
+  <link rel="stylesheet" href="css/style.css">
+  
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+</head>
+<body class="auth-page">
+  <div class="auth-container">
+    <div class="auth-card">
+      <h2 class="auth-title">Đăng nhập</h2>
+      <div id="authErrorMsg" class="auth-error hidden"></div>
+      
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" class="form-control" required placeholder="Nhập email của bạn">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Mật khẩu</label>
+          <input type="password" id="loginPassword" class="form-control" required placeholder="Nhập mật khẩu">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block mt-3" id="loginBtn">Đăng nhập</button>
+      </form>
+      
+      <div class="auth-links mt-3">
+        <p>Chưa có tài khoản? <a href="register.html">Đăng ký ngay</a></p>
+        <p><a href="index.html">Quay về trang chủ</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Missing config warning -->
+  <div id="configWarning" class="state-message error hidden" style="margin: 20px;">
+    <p>Thiếu file cấu hình firebase-config.js. Vui lòng làm theo hướng dẫn README.</p>
+  </div>
+
+  <script src="js/firebase-config.js" onerror="window.firebaseConfigMissing = true;"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // B5 LAYER: Bind Auth Form
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.firebaseConfigMissing) {
+        document.getElementById('configWarning').classList.remove('hidden');
+        document.getElementById('loginBtn').disabled = true;
+        return;
+      }
+
+      const loginForm = document.getElementById('loginForm');
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        window.loginUser(email, password, 'authErrorMsg');
+      });
+    });
+  </script>
+</body>
+</html>

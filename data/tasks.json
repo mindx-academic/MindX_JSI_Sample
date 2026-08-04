@@ -1,0 +1,74 @@
+[
+  {
+    "id": "T001",
+    "title": "Ôn tập DOM và Event",
+    "topic": "Frontend",
+    "deadline": "2026-08-01",
+    "status": "done",
+    "priority": "high",
+    "description": "Làm lại các bài tập thao tác DOM và gắn sự kiện click."
+  },
+  {
+    "id": "T002",
+    "title": "Ôn tập HTML và CSS",
+    "topic": "Frontend",
+    "deadline": "2026-08-05",
+    "status": "todo",
+    "priority": "high",
+    "description": "Luyện tập xây dựng layout với Flexbox và Grid."
+  },
+  {
+    "id": "T003",
+    "title": "Hoàn thành giao diện mini project",
+    "topic": "Frontend",
+    "deadline": "2026-08-10",
+    "status": "doing",
+    "priority": "medium",
+    "description": "Code CSS cho ứng dụng quản lý nhiệm vụ."
+  },
+  {
+    "id": "T004",
+    "title": "Chuẩn bị slide giới thiệu dự án",
+    "topic": "Soft Skills",
+    "deadline": "2026-08-15",
+    "status": "todo",
+    "priority": "medium",
+    "description": "Soạn slide báo cáo SPCK phần 1."
+  },
+  {
+    "id": "T005",
+    "title": "Kiểm tra bố cục website",
+    "topic": "QA",
+    "deadline": "2026-08-12",
+    "status": "todo",
+    "priority": "high",
+    "description": "Test responsive trên màn hình mobile 320px."
+  },
+  {
+    "id": "T006",
+    "title": "Quay video demo sản phẩm",
+    "topic": "Soft Skills",
+    "deadline": "2026-08-20",
+    "status": "todo",
+    "priority": "low",
+    "description": "Sử dụng OBS quay lại luồng người dùng."
+  },
+  {
+    "id": "T007",
+    "title": "Chỉnh sửa dự án theo nhận xét",
+    "topic": "Frontend",
+    "deadline": "2026-08-08",
+    "status": "doing",
+    "priority": "high",
+    "description": "Sửa lại padding và bo góc các phần tử UI."
+  },
+  {
+    "id": "T008",
+    "title": "Nộp bản kế hoạch sản phẩm",
+    "topic": "Project Management",
+    "deadline": "2026-07-25",
+    "status": "done",
+    "priority": "medium",
+    "description": "Nộp link Google Docs bản kế hoạch."
+  }
+]

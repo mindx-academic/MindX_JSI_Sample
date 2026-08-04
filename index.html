@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindX Smart Class Manager - Master B6</title>
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- B4 LAYER: Firebase CDN v8.10.1 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <!-- B5 LAYER: Firebase Auth -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <!-- B6 LAYER: Firebase Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-logo">
+      <h1>MindX Smart Class</h1>
+    </div>
+    <div class="header-auth">
+      <!-- Public buttons -->
+      <div id="header-public-actions">
+        <a href="login.html" class="btn btn-outline">Đăng nhập</a>
+        <a href="register.html" class="btn btn-primary">Đăng ký</a>
+      </div>
+      <!-- Authenticated buttons -->
+      <div id="header-auth-actions" class="hidden">
+        <span id="userEmailDisplay" class="user-email"></span>
+        <button id="btnLogout" class="btn btn-outline">Đăng xuất</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <!-- VIEW SECTIONS -->
+    <div id="public-view" class="view-section">
+      <div class="welcome-banner">
+        <h2>Chào mừng đến với hệ thống bảng nhiệm vụ Public (Dữ liệu mẫu)</h2>
+        <p>Vui lòng đăng nhập để xem dữ liệu lớp học trực tuyến.</p>
+      </div>
+    </div>
+
+    <div id="authenticated-view" class="view-section hidden">
+      <div id="student-view" class="role-view hidden">
+        <div class="welcome-banner student-banner">
+          <h2>Bảng nhiệm vụ Lớp học (Học viên)</h2>
+          <p>Bạn chỉ có quyền xem chi tiết nhiệm vụ.</p>
+        </div>
+      </div>
+      
+      <div id="teacher-view" class="role-view hidden">
+        <div class="welcome-banner teacher-banner">
+          <h2>Bảng điều khiển (Giáo viên)</h2>
+          <p>Bạn có toàn quyền quản lý nhiệm vụ lớp học.</p>
+          <button id="btnOpenCreateForm" class="btn btn-primary mt-2">Thêm nhiệm vụ mới</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHARED BOARD CONTROLS -->
+    <div class="search-filter-section">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Tìm theo ID hoặc tiêu đề...">
+        <button id="searchBtn" class="btn btn-primary">Tìm kiếm</button>
+      </div>
+      <div class="filter-box">
+        <select id="statusFilter" class="form-control">
+          <option value="all">Tất cả trạng thái</option>
+          <option value="todo">Chưa thực hiện</option>
+          <option value="doing">Đang thực hiện</option>
+          <option value="done">Đã hoàn thành</option>
+        </select>
+        <button id="resetBtn" class="btn btn-outline">Xem tất cả</button>
+      </div>
+    </div>
+
+    <!-- SHARED BOARD GRID -->
+    <div id="loadingState" class="state-message hidden">
+      <p>Đang tải dữ liệu...</p>
+    </div>
+    
+    <div id="emptyState" class="state-message hidden">
+      <p>Không tìm thấy nhiệm vụ</p>
+    </div>
+    
+    <div id="errorState" class="state-message hidden error">
+      <p>Đã xảy ra lỗi khi tải dữ liệu</p>
+    </div>
+
+    <div id="taskGrid" class="task-grid hidden">
+      <!-- Rendered by JS -->
+    </div>
+  </main>
+
+  <!-- SHARED TASK DETAIL MODAL (Read Only) -->
+  <div id="taskModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">Chi tiết nhiệm vụ</h3>
+        <button type="button" class="modal-close" id="closeDetailModalBtn" aria-label="Đóng chi tiết nhiệm vụ">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Content injected via JS -->
+      </div>
+      <div class="modal-footer">
+        <button id="closeDetailFooterBtn" class="btn btn-outline">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- B6 LAYER: SHARED CREATE/EDIT FORM MODAL -->
+  <div id="taskFormModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="formModalTitle">Thêm nhiệm vụ</h3>
+        <button type="button" class="modal-close" id="closeFormModalBtn" aria-label="Đóng form">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="taskForm">
+          <div class="form-group">
+            <label for="taskTitle">Tiêu đề <span class="required">*</span></label>
+            <input type="text" id="taskTitle" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="taskTopic">Chủ đề <span class="required">*</span></label>
+            <input type="text" id="taskTopic" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="taskDeadline">Hạn chót <span class="required">*</span></label>
+            <input type="date" id="taskDeadline" class="form-control" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="taskStatus">Trạng thái <span class="required">*</span></label>
+              <select id="taskStatus" class="form-control" required>
+                <option value="todo">Chưa thực hiện</option>
+                <option value="doing">Đang thực hiện</option>
+                <option value="done">Đã hoàn thành</option>
+              </select>
+            </div>
+            <div class="form-group half">
+              <label for="taskPriority">Mức độ ưu tiên <span class="required">*</span></label>
+              <select id="taskPriority" class="form-control" required>
+                <option value="low">Thấp</option>
+                <option value="medium">Trung bình</option>
+                <option value="high">Cao</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="taskDesc">Mô tả</label>
+            <textarea id="taskDesc" class="form-control" rows="4"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelFormBtn" class="btn btn-outline">Hủy</button>
+        <button id="saveTaskBtn" class="btn btn-primary">Lưu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- B6 LAYER: DELETE CONFIRMATION MODAL -->
+  <div id="deleteConfirmModal" class="modal hidden">
+    <div class="modal-content delete-modal">
+      <div class="modal-header">
+        <h3>Xác nhận xóa</h3>
+        <button type="button" class="modal-close" id="closeDeleteModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Bạn có chắc chắn muốn xóa nhiệm vụ này không? Hành động này không thể hoàn tác.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelDeleteBtn" class="btn btn-outline">Hủy</button>
+        <button id="confirmDeleteBtn" class="btn btn-danger">Xóa</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- B4 LAYER: Firebase Config Placeholder/Runtime -->
+  <!-- Check if config exists, if not, app.js will handle -->
+  <script src="js/firebase-config.js" onerror="window.firebaseConfigMissing = true;"></script>
+  
+  <!-- B5 LAYER: Auth Logic -->
+  <script src="js/auth.js"></script>
+  
+  <!-- B6 LAYER: Role Helper -->
+  <script src="js/role-helper.js"></script>
+
+  <!-- B2 LAYER: Local Data -->
+  <script src="js/task-local-data.js"></script>
+
+  <!-- B3 LAYER: Data Processing -->
+  <script src="js/task-data-processing.js"></script>
+
+  <!-- B6 LAYER: Firestore CRUD -->
+  <script src="js/task-firestore.js"></script>
+
+  <!-- B2/B3/B6 LAYER: UI Rendering -->
+  <script src="js/task-ui.js"></script>
+
+  <!-- Orchestration -->
+  <script src="js/app.js"></script>
+</body>
+</html>
