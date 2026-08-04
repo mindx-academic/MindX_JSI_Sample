@@ -1,0 +1,175 @@
+:root {
+  /* --color-primary: #CD5C08; */
+  --color-primary: #982b1c;
+  --color-danger: #b8001f;
+  --color-primary-blur: rgba(184, 0, 31, 0.8);
+  --color-black: #000;
+  --color-white: #fff;
+  --color-input-dark: #0b192c;
+  --color-grey: #5c5c5e;
+  --color-grey-light: #dcdcdc;
+}
+
+.logo img {
+  max-width: 200px;
+}
+
+/* rounded */
+.rounded-sm {
+  border-radius: 4px;
+}
+.rounded-md {
+  border-radius: 8px;
+}
+
+/*  */
+.btn-primary {
+  background-color: var(--color-primary);
+  border: none;
+}
+.btn-primary:hover {
+  background-color: var(--color-primary);
+  opacity: 0.9;
+}
+.btn-grey {
+  background-color: #d1d1d1;
+  border: none;
+}
+.btn-danger {
+  background-color: var(--color-danger) !important;
+  color: var(--color-white);
+}
+.btn-cancle {
+  margin: 8px 0px;
+  border: 1px solid var(--color-grey);
+}
+/* text */
+.text-primary {
+  color: var(--color-primary) !important;
+}
+.text-danger {
+  color: var(--color-danger);
+}
+.text-black {
+  color: var(--color-black);
+}
+
+/* background */
+.bg-primary {
+  background-color: var(--color-primary) !important;
+}
+.bg-grey-light {
+  background-color: var(--color-grey-light);
+}
+
+/* box shadow */
+.shadow-md {
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 8px;
+}
+
+/* layout */
+.page-wrapper {
+  min-height: 100vh;
+}
+.page-content {
+  min-height: 300px;
+  margin-top: 95px;
+}
+.sidebar {
+  background-color: var(--color-black);
+}
+.sidebar .menu {
+  list-style: none;
+}
+.sidebar .menu a {
+  text-decoration: none;
+}
+.sidebar .menu a:hover {
+  background-color: var(--color-grey);
+}
+
+/*  */
+.product-table .product-item img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.nav.pe-4.align-items-center > li:first-child {
+  display: none;
+}
+
+.icon-dropdown i {
+  display: none;
+}
+
+/* style nút x */
+.close {
+  position: absolute;
+  right: 32px;
+  top: 32px;
+  width: 32px;
+  height: 32px;
+  opacity: 0.3;
+}
+.close:hover {
+  opacity: 1;
+}
+.close:before,
+.close:after {
+  position: absolute;
+  left: 15px;
+  content: " ";
+  height: 33px;
+  width: 2px;
+  background-color: #333;
+}
+.close:before {
+  transform: rotate(45deg);
+}
+.close:after {
+  transform: rotate(-45deg);
+}
+
+.flex{
+  display: flex;
+}
+
+
+
+
+/*  `sm` applies to x-small devices (portrait phones, less than 576px) */
+@media (max-width: 575.98px) {
+  .hidden{
+    display: none!important;
+  }
+
+  .container.d-flex.justify-content-between {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .container.d-flex.justify-content-between > ul {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start !important;
+    margin-top: 10px;
+    /* display: none;  */
+  }
+
+  .icon-dropdown i {
+    display: block;
+    position: absolute;
+    right: 0;
+    top: 34px;
+    color: white;
+    font-size: 1.5rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+  }
+  
+  .rounded-md {
+    width: 90%;
+  }
+}
