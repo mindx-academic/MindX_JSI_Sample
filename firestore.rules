@@ -1,0 +1,129 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Core User Profile Rule (Preserved from Core Baseline) ---
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // --- Helper Functions ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isTeacher() {
+      return isSignedIn() && getUserRole() == 'teacher';
+    }
+
+    function isAbsentOrNull(data, key) {
+      return !(key in data) || data[key] == null;
+    }
+
+    function hasValidCoreTaskKeys(data) {
+      return data.keys().hasAll(['title', 'topic', 'deadline', 'status', 'priority', 'description']);
+    }
+
+    function hasAllowedV1TaskKeys(data) {
+      return data.keys().hasOnly([
+        'title', 'topic', 'deadline', 'status', 'priority', 'description',
+        'resources', 'lifecycleState', 'archivedAt', 'deletedAt', 'purgeAfter'
+      ]);
+    }
+
+    function hasValidTaskTypes(data) {
+      return data.title is string
+          && data.topic is string
+          && data.deadline is string
+          && data.description is string
+          && data.status in ['todo', 'doing', 'review', 'done']
+          && data.priority in ['low', 'medium', 'high']
+          && data.lifecycleState in ['active', 'archived', 'deleted'];
+    }
+
+    function hasValidResourcesBound(data) {
+      return !('resources' in data) || (data.resources is list && data.resources.size() <= 20);
+    }
+
+    match /tasks/{taskId} {
+      // --- READ POLICY ---
+      // Student: Active tasks ONLY (lifecycleState == 'active')
+      // Teacher: Active, Archived, and Soft-Deleted tombstones
+      allow get, list: if isSignedIn() && (
+        isTeacher() ||
+        (resource.data.lifecycleState == 'active')
+      );
+
+      // --- CREATE POLICY ---
+      // New tasks MUST explicitly have lifecycleState == 'active'
+      // Lifecycle timestamps MUST be absent or null
+      allow create: if isTeacher()
+        && hasValidCoreTaskKeys(request.resource.data)
+        && hasAllowedV1TaskKeys(request.resource.data)
+        && hasValidTaskTypes(request.resource.data)
+        && hasValidResourcesBound(request.resource.data)
+        && request.resource.data.lifecycleState == 'active'
+        && isAbsentOrNull(request.resource.data, 'archivedAt')
+        && isAbsentOrNull(request.resource.data, 'deletedAt')
+        && isAbsentOrNull(request.resource.data, 'purgeAfter');
+
+      // --- UPDATE POLICY (Enforces Lifecycle State Transitions & Timestamp Integrity) ---
+      allow update: if isTeacher()
+        && hasValidCoreTaskKeys(request.resource.data)
+        && hasAllowedV1TaskKeys(request.resource.data)
+        && hasValidTaskTypes(request.resource.data)
+        && hasValidResourcesBound(request.resource.data)
+        && (
+          // Branch 1: Active -> Active (Normal update, lifecycle timestamps MUST remain absent/null)
+          (resource.data.lifecycleState == 'active'
+            && request.resource.data.lifecycleState == 'active'
+            && isAbsentOrNull(request.resource.data, 'archivedAt')
+            && isAbsentOrNull(request.resource.data, 'deletedAt')
+            && isAbsentOrNull(request.resource.data, 'purgeAfter')) ||
+
+          // Branch 2: Active -> Archived
+          (resource.data.lifecycleState == 'active' 
+            && request.resource.data.lifecycleState == 'archived'
+            && request.resource.data.archivedAt == request.time
+            && isAbsentOrNull(request.resource.data, 'deletedAt')
+            && isAbsentOrNull(request.resource.data, 'purgeAfter')) ||
+
+          // Branch 3: Archived -> Active (Unarchive)
+          (resource.data.lifecycleState == 'archived'
+            && request.resource.data.lifecycleState == 'active'
+            && isAbsentOrNull(request.resource.data, 'archivedAt')
+            && isAbsentOrNull(request.resource.data, 'deletedAt')
+            && isAbsentOrNull(request.resource.data, 'purgeAfter')) ||
+
+          // Branch 4: Archived -> Soft Deleted
+          (resource.data.lifecycleState == 'archived'
+            && request.resource.data.lifecycleState == 'deleted'
+            && request.resource.data.archivedAt == resource.data.archivedAt
+            && request.resource.data.deletedAt == request.time
+            && request.resource.data.purgeAfter == request.time + duration.value(30, 'd')
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'lifecycleState', 'deletedAt', 'purgeAfter'
+            ])) ||
+
+          // Branch 5: Soft Deleted -> Archived (Restore before purgeAfter)
+          (resource.data.lifecycleState == 'deleted'
+            && request.time < resource.data.purgeAfter
+            && request.resource.data.lifecycleState == 'archived'
+            && request.resource.data.archivedAt == resource.data.archivedAt
+            && isAbsentOrNull(request.resource.data, 'deletedAt')
+            && isAbsentOrNull(request.resource.data, 'purgeAfter')
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'lifecycleState', 'deletedAt', 'purgeAfter'
+            ]))
+        );
+
+      // --- CLIENT HARD DELETE POLICY ---
+      // Physical deletion via normal Firestore client is STRICTLY DENIED.
+      allow delete: if false;
+    }
+  }
+}

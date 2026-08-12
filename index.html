@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindX Smart Class Manager (V1 Optional Extensions)</title>
+  
+  <!-- Bootstrap 5 CSS & Icons CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <!-- Google Fonts (Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Core & V1 Extension Styles -->
+  <link rel="stylesheet" href="css/style.css?v=20260811-modal1">
+  <link rel="stylesheet" href="css/v1-kanban.css?v=20260811-actions2">
+</head>
+<body>
+
+  <!-- Navigation Bar (Shell) -->
+  <nav class="navbar navbar-expand-lg bg-white border-bottom shadow-sm sticky-top">
+    <div class="container-fluid px-4">
+      <!-- Brand Logo & Title -->
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+        <div class="brand-logo" style="background-color: #D32F2F; color: white; font-weight: bold; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center;">MX</div>
+        <span class="font-weight-bold" style="color: #212529; font-weight: 700; font-size: 1.1rem;">MindX Smart Class Manager</span>
+      </a>
+
+      <!-- Role-specific Navigation Links -->
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <!-- Teacher Nav -->
+        <div id="teacher-nav-links" class="nav-links-group" style="display: none;">
+          <a href="#" id="tasks-nav-link-teacher" class="nav-link active font-weight-bold" style="color: #D32F2F;">Nhiệm vụ</a>
+          <a href="#" id="archive-nav-link-teacher" class="nav-link text-secondary">Lưu trữ</a>
+          <a href="#" class="nav-link text-secondary">Tài khoản</a>
+          <a href="#" id="logout-btn-teacher" class="nav-link text-danger">Đăng xuất</a>
+        </div>
+
+        <!-- Student Nav -->
+        <div id="student-nav-links" class="nav-links-group" style="display: none;">
+          <a href="#" class="nav-link active font-weight-bold" style="color: #D32F2F;">Nhiệm vụ</a>
+          <a href="#" class="nav-link text-secondary">Tài khoản</a>
+          <a href="#" id="logout-btn-student" class="nav-link text-danger">Đăng xuất</a>
+        </div>
+
+        <!-- Public Nav -->
+        <div id="public-nav-links" class="nav-links-group" style="display: flex; align-items: center;">
+          <a href="#" class="nav-link active font-weight-bold me-3" style="color: #D32F2F;">Nhiệm vụ</a>
+          <a href="login.html?v=20260811-runtime3" class="btn btn-outline-danger btn-sm me-2">Đăng nhập</a>
+          <a href="register.html" class="btn btn-danger btn-sm" style="background-color: #D32F2F;">Đăng ký</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="container-fluid px-4 py-4" style="background-color: #F5F6FA; min-height: calc(100vh - 60px);">
+    <!-- Kanban Mount Point -->
+    <div id="kanban-board-mount-point"></div>
+  </main>
+
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- ================================================================= -->
+  <!-- EXACT 8-STAGE SCRIPT LOAD ORDER CONTRACT                          -->
+  <!-- ================================================================= -->
+
+  <!-- Stage 1: Firebase CDN SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <!-- Stage 2: Environment Firebase Config -->
+  <script src="js/firebase-config.js?v=20260811-runtime3"></script>
+
+  <!-- Stage 3: Core Auth & Role Helper -->
+  <script src="js/auth.js?v=20260811-runtime3"></script>
+  <script src="js/role-helper.js"></script>
+
+  <!-- Stage 4: Core Data & Firestore Modules -->
+  <script src="js/task-local-data.js"></script>
+  <script src="js/task-data-processing.js"></script>
+  <script src="js/task-firestore.js?v=20260811-actions2"></script>
+
+  <!-- Stage 5: Task Schema Adapter & Core UI Controller -->
+  <script src="js/task-schema-adapter.js"></script>
+  <script src="js/task-ui.js?v=20260811-save1"></script>
+
+  <!-- Stage 6: App Bridge & Version Config -->
+  <script src="js/version-config.js"></script>
+  <script src="js/app-bridge.js?v=20260811-runtime3"></script>
+
+  <!-- Stage 7: Extension Feature Modules -->
+  <script src="js/resource-detector.js"></script>
+  <script src="js/resource-manager.js?v=20260811-actions1"></script>
+  <script src="js/kanban-ui.js?v=20260811-actions1"></script>
+  <script src="js/task-detail-controller.js?v=20260811-actions2"></script>
+
+  <!-- Stage 8: Application Bootstrap & App Orchestrator -->
+  <script src="js/bootstrap.js?v=20260811-runtime3"></script>
+  <script src="js/app.js?v=20260811-actions1"></script>
+
+</body>
+</html>
