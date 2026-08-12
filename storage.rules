@@ -1,0 +1,10 @@
+// SUPERSEDED / NOT USED BY FINAL V3 CLOUDINARY RUNTIME
+// Final V3 Release uses Cloudinary Free Plan via v3/server/ backend API
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false; // Superseded by Cloudinary
+    }
+  }
+}

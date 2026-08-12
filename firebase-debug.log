@@ -1,0 +1,27 @@
+[debug] [2026-08-12T09:28:57.010Z] ----------------------------------------------------------------------
+[debug] [2026-08-12T09:28:57.012Z] Command:       /opt/homebrew/Cellar/node/25.9.0_2/bin/node /opt/homebrew/bin/firebase deploy --only firestore:rules --project mindx-jsi-b6-tmp-20260804 --non-interactive
+[debug] [2026-08-12T09:28:57.012Z] CLI Version:   15.11.0
+[debug] [2026-08-12T09:28:57.012Z] Platform:      darwin
+[debug] [2026-08-12T09:28:57.012Z] Node Version:  v25.9.0
+[debug] [2026-08-12T09:28:57.012Z] Time:          Wed Aug 12 2026 16:28:57 GMT+0700 (Indochina Time)
+[debug] [2026-08-12T09:28:57.012Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-12T09:28:58.043Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-12T09:28:58.043Z] > authorizing via signed-in user (academic@mindx.vn)
+[debug] [2026-08-12T09:28:58.043Z] [iam] checking project mindx-jsi-b6-tmp-20260804 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-08-12T09:28:58.044Z] Checked if tokens are valid: true, expires at: 1786529685569
+[debug] [2026-08-12T09:28:58.044Z] Checked if tokens are valid: true, expires at: 1786529685569
+[debug] [2026-08-12T09:28:58.044Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/mindx-jsi-b6-tmp-20260804:testIamPermissions [none]
+[debug] [2026-08-12T09:28:58.044Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/mindx-jsi-b6-tmp-20260804:testIamPermissions  x-goog-user-project=mindx-jsi-b6-tmp-20260804
+[debug] [2026-08-12T09:28:58.044Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/mindx-jsi-b6-tmp-20260804:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[debug] [2026-08-12T09:28:59.037Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/mindx-jsi-b6-tmp-20260804:testIamPermissions 200
+[debug] [2026-08-12T09:28:59.037Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/mindx-jsi-b6-tmp-20260804:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}
+[info] 
+[info] === Deploying to 'mindx-jsi-b6-tmp-20260804'...
+[info] 
+[info] i  deploying firestore 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-08-12T09:28:59.040Z] Checked if tokens are valid: true, expires at: 1786529685569
+[debug] [2026-08-12T09:28:59.040Z] Checked if tokens are valid: true, expires at: 1786529685569
+[debug] [2026-08-12T09:28:59.040Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/mindx-jsi-b6-tmp-20260804/databases/(default) [none]

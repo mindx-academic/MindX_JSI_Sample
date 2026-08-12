@@ -1,0 +1,10 @@
+# JSI 2026 V1 LOCKED BASELINE MANIFEST
+
+**V1 LOCK STATUS:** LOCKED  
+**LOCK DATE:** 2026-08-12  
+**PARENT BASELINE:** `MASTER_B6_REFERENCE/` (Byte-for-byte immutable, 100% verified)  
+**FINAL RULES SHA256:** `0f7813a3769f213b4ec26f907b1ecb6e14f29bca46aa6260324d9d91d03f483d`  
+**FINAL PACKAGE CHECKSUM REFERENCE:** `CHECKSUMS.sha256`  
+**CODEX CLOSURE REPORT:** `24_CODEX_V1_TARGETED_CLOSURE_CHECK.md` (PASSED)  
+
+This V1 release artifact at `OPTIONAL_EXTENSIONS/v1/release/` is frozen and locked as the parent baseline for V2 derivation.

@@ -3,206 +3,110 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MindX Smart Class Manager - Master B6</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>MindX Smart Class Manager (V3 Release - Submissions & Feedback)</title>
   
-  <!-- B4 LAYER: Firebase CDN v8.10.1 -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <!-- B5 LAYER: Firebase Auth -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <!-- B6 LAYER: Firebase Firestore -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <!-- Bootstrap 5 CSS & Icons CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <!-- Google Fonts (Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Core & V1/V2/V3 Extension Styles -->
+  <link rel="stylesheet" href="css/style.css?v=20260812-v3">
+  <link rel="stylesheet" href="css/v1-kanban.css?v=20260812-v3">
 </head>
 <body>
-  <!-- HEADER -->
-  <header class="app-header">
-    <div class="header-logo">
-      <h1>MindX Smart Class</h1>
-    </div>
-    <div class="header-auth">
-      <!-- Public buttons -->
-      <div id="header-public-actions">
-        <a href="login.html" class="btn btn-outline">Đăng nhập</a>
-        <a href="register.html" class="btn btn-primary">Đăng ký</a>
-      </div>
-      <!-- Authenticated buttons -->
-      <div id="header-auth-actions" class="hidden">
-        <span id="userEmailDisplay" class="user-email"></span>
-        <button id="btnLogout" class="btn btn-outline">Đăng xuất</button>
-      </div>
-    </div>
-  </header>
 
-  <main class="container">
-    
-    <!-- VIEW SECTIONS -->
-    <div id="public-view" class="view-section">
-      <div class="welcome-banner">
-        <h2>Chào mừng đến với hệ thống bảng nhiệm vụ Public (Dữ liệu mẫu)</h2>
-        <p>Vui lòng đăng nhập để xem dữ liệu lớp học trực tuyến.</p>
-      </div>
-    </div>
+  <!-- Navigation Bar (Shell) -->
+  <nav class="navbar navbar-expand-lg bg-white border-bottom shadow-sm sticky-top">
+    <div class="container-fluid px-4">
+      <!-- Brand Logo & Title -->
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+        <div class="brand-logo" style="background-color: #D32F2F; color: white; font-weight: bold; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center;">MX</div>
+        <span class="font-weight-bold" style="color: #212529; font-weight: 700; font-size: 1.1rem;">MindX Smart Class Manager <span class="badge bg-success ms-1" style="font-size: 0.75rem;">V3</span></span>
+      </a>
 
-    <div id="authenticated-view" class="view-section hidden">
-      <div id="student-view" class="role-view hidden">
-        <div class="welcome-banner student-banner">
-          <h2>Bảng nhiệm vụ Lớp học (Học viên)</h2>
-          <p>Bạn chỉ có quyền xem chi tiết nhiệm vụ.</p>
+      <!-- Role-specific Navigation Links -->
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <!-- Teacher Nav -->
+        <div id="teacher-nav-links" class="nav-links-group" style="display: none;">
+          <a href="#" id="tasks-nav-link-teacher" class="nav-link active font-weight-bold" style="color: #D32F2F;">Nhiệm vụ</a>
+          <a href="#" id="archive-nav-link-teacher" class="nav-link text-secondary">Lưu trữ</a>
+          <a href="#" class="nav-link text-secondary">Tài khoản</a>
+          <a href="#" id="logout-btn-teacher" class="nav-link text-danger">Đăng xuất</a>
         </div>
-      </div>
-      
-      <div id="teacher-view" class="role-view hidden">
-        <div class="welcome-banner teacher-banner">
-          <h2>Bảng điều khiển (Giáo viên)</h2>
-          <p>Bạn có toàn quyền quản lý nhiệm vụ lớp học.</p>
-          <button id="btnOpenCreateForm" class="btn btn-primary mt-2">Thêm nhiệm vụ mới</button>
+
+        <!-- Student Nav -->
+        <div id="student-nav-links" class="nav-links-group" style="display: none;">
+          <a href="#" class="nav-link active font-weight-bold" style="color: #D32F2F;">Nhiệm vụ</a>
+          <a href="#" class="nav-link text-secondary">Tài khoản</a>
+          <a href="#" id="logout-btn-student" class="nav-link text-danger">Đăng xuất</a>
+        </div>
+
+        <!-- Public Nav -->
+        <div id="public-nav-links" class="nav-links-group" style="display: flex; align-items: center;">
+          <a href="#" class="nav-link active font-weight-bold me-3" style="color: #D32F2F;">Nhiệm vụ</a>
+          <a href="login.html?v=20260812-v3" class="btn btn-outline-danger btn-sm me-2">Đăng nhập</a>
+          <a href="register.html" class="btn btn-danger btn-sm" style="background-color: #D32F2F;">Đăng ký</a>
         </div>
       </div>
     </div>
+  </nav>
 
-    <!-- SHARED BOARD CONTROLS -->
-    <div class="search-filter-section">
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Tìm theo ID hoặc tiêu đề...">
-        <button id="searchBtn" class="btn btn-primary">Tìm kiếm</button>
-      </div>
-      <div class="filter-box">
-        <select id="statusFilter" class="form-control">
-          <option value="all">Tất cả trạng thái</option>
-          <option value="todo">Chưa thực hiện</option>
-          <option value="doing">Đang thực hiện</option>
-          <option value="done">Đã hoàn thành</option>
-        </select>
-        <button id="resetBtn" class="btn btn-outline">Xem tất cả</button>
-      </div>
-    </div>
-
-    <!-- SHARED BOARD GRID -->
-    <div id="loadingState" class="state-message hidden">
-      <p>Đang tải dữ liệu...</p>
-    </div>
-    
-    <div id="emptyState" class="state-message hidden">
-      <p>Không tìm thấy nhiệm vụ</p>
-    </div>
-    
-    <div id="errorState" class="state-message hidden error">
-      <p>Đã xảy ra lỗi khi tải dữ liệu</p>
-    </div>
-
-    <div id="taskGrid" class="task-grid hidden">
-      <!-- Rendered by JS -->
-    </div>
+  <!-- Main Content Container -->
+  <main class="container-fluid px-4 py-4" style="background-color: #F5F6FA; min-height: calc(100vh - 60px);">
+    <!-- Kanban Mount Point -->
+    <div id="kanban-board-mount-point"></div>
   </main>
 
-  <!-- SHARED TASK DETAIL MODAL (Read Only) -->
-  <div id="taskModal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="modalTitle">Chi tiết nhiệm vụ</h3>
-        <button type="button" class="modal-close" id="closeDetailModalBtn" aria-label="Đóng chi tiết nhiệm vụ">&times;</button>
-      </div>
-      <div class="modal-body" id="modalBody">
-        <!-- Content injected via JS -->
-      </div>
-      <div class="modal-footer">
-        <button id="closeDetailFooterBtn" class="btn btn-outline">Đóng</button>
-      </div>
-    </div>
-  </div>
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- B6 LAYER: SHARED CREATE/EDIT FORM MODAL -->
-  <div id="taskFormModal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="formModalTitle">Thêm nhiệm vụ</h3>
-        <button type="button" class="modal-close" id="closeFormModalBtn" aria-label="Đóng form">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="taskForm">
-          <div class="form-group">
-            <label for="taskTitle">Tiêu đề <span class="required">*</span></label>
-            <input type="text" id="taskTitle" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label for="taskTopic">Chủ đề <span class="required">*</span></label>
-            <input type="text" id="taskTopic" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label for="taskDeadline">Hạn chót <span class="required">*</span></label>
-            <input type="date" id="taskDeadline" class="form-control" required>
-          </div>
-          <div class="form-row">
-            <div class="form-group half">
-              <label for="taskStatus">Trạng thái <span class="required">*</span></label>
-              <select id="taskStatus" class="form-control" required>
-                <option value="todo">Chưa thực hiện</option>
-                <option value="doing">Đang thực hiện</option>
-                <option value="done">Đã hoàn thành</option>
-              </select>
-            </div>
-            <div class="form-group half">
-              <label for="taskPriority">Mức độ ưu tiên <span class="required">*</span></label>
-              <select id="taskPriority" class="form-control" required>
-                <option value="low">Thấp</option>
-                <option value="medium">Trung bình</option>
-                <option value="high">Cao</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="taskDesc">Mô tả</label>
-            <textarea id="taskDesc" class="form-control" rows="4"></textarea>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button id="cancelFormBtn" class="btn btn-outline">Hủy</button>
-        <button id="saveTaskBtn" class="btn btn-primary">Lưu</button>
-      </div>
-    </div>
-  </div>
+  <!-- ================================================================= -->
+  <!-- EXACT 8-STAGE SCRIPT LOAD ORDER CONTRACT                          -->
+  <!-- ================================================================= -->
 
-  <!-- B6 LAYER: DELETE CONFIRMATION MODAL -->
-  <div id="deleteConfirmModal" class="modal hidden">
-    <div class="modal-content delete-modal">
-      <div class="modal-header">
-        <h3>Xác nhận xóa</h3>
-        <button type="button" class="modal-close" id="closeDeleteModalBtn">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p>Bạn có chắc chắn muốn xóa nhiệm vụ này không? Hành động này không thể hoàn tác.</p>
-      </div>
-      <div class="modal-footer">
-        <button id="cancelDeleteBtn" class="btn btn-outline">Hủy</button>
-        <button id="confirmDeleteBtn" class="btn btn-danger">Xóa</button>
-      </div>
-    </div>
-  </div>
+  <!-- Stage 1: Firebase CDN SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-  <!-- B4 LAYER: Firebase Config Placeholder/Runtime -->
-  <!-- Check if config exists, if not, app.js will handle -->
-  <script src="js/firebase-config.js" onerror="window.firebaseConfigMissing = true;"></script>
-  
-  <!-- B5 LAYER: Auth Logic -->
-  <script src="js/auth.js"></script>
-  
-  <!-- B6 LAYER: Role Helper -->
+  <!-- Stage 2: Environment Firebase Config -->
+  <script src="js/firebase-config.js?v=20260812-v3"></script>
+
+  <!-- Stage 3: Core Auth & Role Helper -->
+  <script src="js/auth.js?v=20260812-v3"></script>
   <script src="js/role-helper.js"></script>
 
-  <!-- B2 LAYER: Local Data -->
+  <!-- Stage 4: Core Data & Firestore Modules -->
   <script src="js/task-local-data.js"></script>
-
-  <!-- B3 LAYER: Data Processing -->
   <script src="js/task-data-processing.js"></script>
+  <script src="js/task-firestore.js?v=20260812-v3"></script>
 
-  <!-- B6 LAYER: Firestore CRUD -->
-  <script src="js/task-firestore.js"></script>
+  <!-- Stage 5: Task Schema Adapter & Core UI Controller -->
+  <script src="js/task-schema-adapter.js"></script>
+  <script src="js/task-ui.js?v=20260812-v3"></script>
 
-  <!-- B2/B3/B6 LAYER: UI Rendering -->
-  <script src="js/task-ui.js"></script>
+  <!-- Stage 6: App Bridge, Version Config & API Config -->
+  <script src="js/version-config.js?v=20260812-v3"></script>
+  <script src="js/api-config.js?v=20260812-v3"></script>
+  <script src="js/app-bridge.js?v=20260812-v3"></script>
 
-  <!-- Orchestration -->
-  <script src="js/app.js"></script>
+  <!-- Stage 7: Extension Feature Modules (V1 + V2 + V3) -->
+  <script src="js/resource-detector.js"></script>
+  <script src="js/resource-manager.js?v=20260812-v3"></script>
+  <script src="js/comments-manager.js?v=20260812-v3"></script>
+  <script src="js/progress-tracker.js?v=20260812-v3"></script>
+  <script src="js/submission-manager.js?v=20260812-v3"></script>
+  <script src="js/kanban-ui.js?v=20260812-v3"></script>
+  <script src="js/task-detail-controller.js?v=20260812-v3"></script>
+
+  <!-- Stage 8: Application Bootstrap & App Orchestrator -->
+  <script src="js/bootstrap.js?v=20260812-v3"></script>
+  <script src="js/app.js?v=20260812-v3"></script>
+
 </body>
 </html>

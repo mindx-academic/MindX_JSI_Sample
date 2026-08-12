@@ -1,226 +1,145 @@
-// CORE LAYER: Orchestration
-// Kết nối các module và điều khiển View/State toàn cục
+/* JSI 2026 Optional Extensions V1 - App Orchestrator (Derived) */
 
-let currentTasks = [];
-let currentRole = null; // 'student' | 'teacher' | null (public)
-let selectedTaskId = null; // Dùng cho Edit/Delete
+(function(window) {
+  'use strict';
 
-// DOM Selectors cho View
-const publicView = document.getElementById('public-view');
-const authView = document.getElementById('authenticated-view');
-const studentView = document.getElementById('student-view');
-const teacherView = document.getElementById('teacher-view');
-const headerPublicActions = document.getElementById('header-public-actions');
-const headerAuthActions = document.getElementById('header-auth-actions');
-const userEmailDisplay = document.getElementById('userEmailDisplay');
+  // One authoritative state store. Legacy globals are mirrored only for
+  // compatibility with the derived V1 modules; renderers read AppState.
+  window.AppState = {
+    currentUser: null,
+    currentRole: null,
+    tasks: [],
+    authResolved: false,
+    error: null
+  };
+  window.currentTasks = [];
+  window.currentRole = null;
+  window.selectedTaskId = window.selectedTaskId || null;
 
-// DOM Selectors cho Shared Board
-const searchInput = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
-const statusFilter = document.getElementById('statusFilter');
-const resetBtn = document.getElementById('resetBtn');
-const taskGrid = document.getElementById('taskGrid');
+  var App = {
+    init: async function() {
+      console.log('App Orchestrator Starting (V1 Derived Release)...');
+      
+      this.bindLogoutControls();
+      this.bindNavigationControls();
+      this.updateNavShell();
+      if (window.Bootstrap) window.Bootstrap.mountApp();
 
-// B6: DOM form buttons
-const btnOpenCreateForm = document.getElementById('btnOpenCreateForm');
-const taskForm = document.getElementById('taskForm');
-const saveTaskBtn = document.getElementById('saveTaskBtn');
-const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-const btnLogout = document.getElementById('btnLogout');
+      // Authoritative runtime flow: Auth -> profile role -> tasks -> render.
+      if (window.firebase && window.firebase.auth) {
+        window.firebase.auth().onAuthStateChanged(async function(user) {
+          var state = window.AppState;
+          state.authResolved = false;
+          state.error = null;
+          state.currentUser = user || null;
+          state.currentRole = null;
+          state.tasks = [];
+          window.currentRole = null;
+          window.currentTasks = [];
+          App.updateNavShell();
+          if (window.Bootstrap) window.Bootstrap.mountApp();
 
-// --- HÀM TẢI DỮ LIỆU CHUNG ---
-const loadTasks = async () => {
-  window.uiShowLoading();
-  try {
-    if (!currentRole) {
-      // Public Flow -> Local JSON
-      currentTasks = await window.fetchLocalTasks();
-    } else {
-      // Authenticated Flow -> Firestore
-      currentTasks = await window.fetchFirestoreTasks();
-    }
-    applyFilters();
-  } catch (error) {
-    window.uiShowError();
-  }
-};
+          console.log('[V1] AUTH_STATE ' + (user ? ('uid=' + user.uid + ' email=' + user.email) : 'signed-out'));
 
-// --- HÀM ÁP DỤNG FILTER ---
-const applyFilters = () => {
-  const keyword = searchInput.value.trim().toLowerCase();
-  const status = statusFilter.value;
-  const filteredTasks = window.filterTasks(currentTasks, keyword, status);
-  
-  if (filteredTasks.length === 0 && currentTasks.length > 0) {
-    window.uiShowEmpty();
-  } else {
-    // Render theo role hiện tại
-    window.uiRenderTasks(filteredTasks, currentRole || 'public');
-  }
-};
+          try {
+            var role = 'public';
+            if (user) {
+            if (typeof window.ensureUserProfileAndGetRole === 'function') {
+                role = await window.ensureUserProfileAndGetRole(user.uid);
+            } else if (window.RoleHelper && typeof window.RoleHelper.fetchUserRole === 'function') {
+                role = await window.RoleHelper.fetchUserRole(user.uid);
+            } else {
+                throw new Error('ROLE_RESOLVER_UNAVAILABLE');
+              }
+            }
 
-// --- CHUYỂN ĐỔI VIEW (STATE MACHINE) ---
-const switchView = (role, user) => {
-  currentRole = role;
-  
-  // Reset trạng thái search/filter
-  searchInput.value = '';
-  statusFilter.value = 'all';
+            state.currentRole = role;
+            window.currentRole = role;
+            console.log('[V1] PROFILE_ROLE', role);
 
-  if (!role) {
-    // Public View
-    publicView.classList.remove('hidden');
-    authView.classList.add('hidden');
-    headerPublicActions.classList.remove('hidden');
-    headerAuthActions.classList.add('hidden');
-  } else {
-    // Authenticated View
-    publicView.classList.add('hidden');
-    authView.classList.remove('hidden');
-    headerPublicActions.classList.add('hidden');
-    headerAuthActions.classList.remove('hidden');
-    userEmailDisplay.innerText = user.email;
+            var tasks = window.AppBridge ? await window.AppBridge.reloadTasks() : [];
+            state.tasks = tasks;
+            window.currentTasks = tasks;
+            state.authResolved = true;
+            console.log('[V1] TASK_COUNT', tasks.length);
+            console.log('[V1] RENDER_BRANCH', role);
+          } catch (error) {
+            state.error = error;
+            state.authResolved = true;
+            console.error('[V1] APP_STATE_ERROR', error);
+          }
 
-    if (role === 'teacher') {
-      teacherView.classList.remove('hidden');
-      studentView.classList.add('hidden');
-    } else {
-      studentView.classList.remove('hidden');
-      teacherView.classList.add('hidden');
-    }
-  }
-  
-  // Tải dữ liệu theo role mới
-  loadTasks();
-};
-
-// --- AUTH STATE OBSERVER ---
-// Được kích hoạt từ auth.js
-window.onAuthChangedCallback = async (user) => {
-  if (user) {
-    // Kiểm tra và tạo profile nếu cần (B6)
-    const role = await window.ensureUserProfileAndGetRole(user.uid);
-    switchView(role, user);
-  } else {
-    switchView(null, null);
-  }
-};
-
-// --- GẮN SỰ KIỆN (EVENT LISTENERS) ---
-
-// 1. Search & Filter
-searchBtn.addEventListener('click', applyFilters);
-statusFilter.addEventListener('change', applyFilters);
-searchInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') applyFilters();
-});
-resetBtn.addEventListener('click', () => {
-  searchInput.value = '';
-  statusFilter.value = 'all';
-  applyFilters();
-});
-
-// 2. Auth Logout
-if (btnLogout) {
-  btnLogout.addEventListener('click', () => {
-    window.logoutUser();
-  });
-}
-
-// 3. Grid Click (Event Delegation)
-taskGrid.addEventListener('click', (e) => {
-  const card = e.target.closest('.task-card');
-  const editBtn = e.target.closest('.edit-task-btn');
-  const deleteBtn = e.target.closest('.delete-task-btn');
-
-  if (deleteBtn) {
-    e.stopPropagation();
-    selectedTaskId = deleteBtn.getAttribute('data-task-id');
-    window.uiOpenDeleteConfirm();
-  } else if (editBtn) {
-    e.stopPropagation();
-    selectedTaskId = editBtn.getAttribute('data-task-id');
-    const task = window.findTaskById(currentTasks, selectedTaskId);
-    if (task) window.uiOpenTaskForm(task);
-  } else if (card) {
-    const taskId = card.getAttribute('data-task-id');
-    const task = window.findTaskById(currentTasks, taskId);
-    if (task) window.uiOpenTaskDetail(task);
-  }
-});
-
-// 4. Create/Edit Form Submit (B6)
-if (btnOpenCreateForm) {
-  btnOpenCreateForm.addEventListener('click', () => {
-    selectedTaskId = null; // Create mode
-    window.uiOpenTaskForm(null);
-  });
-}
-
-if (saveTaskBtn) {
-  saveTaskBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    if (!taskForm.checkValidity()) {
-      taskForm.reportValidity();
-      return;
-    }
-
-    const taskData = {
-      title: document.getElementById('taskTitle').value,
-      topic: document.getElementById('taskTopic').value,
-      deadline: document.getElementById('taskDeadline').value,
-      status: document.getElementById('taskStatus').value,
-      priority: document.getElementById('taskPriority').value,
-      description: document.getElementById('taskDesc').value
-    };
-
-    saveTaskBtn.disabled = true;
-    saveTaskBtn.innerText = "Đang lưu...";
-
-    try {
-      if (selectedTaskId) {
-        await window.updateFirestoreTask(selectedTaskId, taskData);
+          App.updateNavShell();
+          if (window.Bootstrap) window.Bootstrap.mountApp();
+        });
       } else {
-        await window.createFirestoreTask(taskData);
+        window.AppState.error = new Error('FIREBASE_AUTH_UNAVAILABLE');
+        window.AppState.authResolved = true;
+        console.error('[V1] APP_STATE_ERROR Firebase Auth unavailable');
+        if (window.Bootstrap) window.Bootstrap.mountApp();
       }
-      window.uiCloseTaskForm();
-      loadTasks(); // Tải lại sau khi Write
-    } catch (error) {
-      alert("Có lỗi xảy ra. Xem console để biết thêm chi tiết.");
-    } finally {
-      saveTaskBtn.disabled = false;
-      saveTaskBtn.innerText = "Lưu";
+    },
+
+    bindLogoutControls: function() {
+      ['logout-btn-teacher', 'logout-btn-student'].forEach(function(id) {
+        var button = document.getElementById(id);
+        if (!button || button.dataset.logoutBound === 'true') return;
+        button.dataset.logoutBound = 'true';
+        button.addEventListener('click', function(event) {
+          event.preventDefault();
+          if (typeof window.logoutUser === 'function') window.logoutUser();
+        });
+      });
+    },
+
+    bindNavigationControls: function() {
+      var tasksLink = document.getElementById('tasks-nav-link-teacher');
+      var archiveLink = document.getElementById('archive-nav-link-teacher');
+
+      if (tasksLink && tasksLink.dataset.navigationBound !== 'true') {
+        tasksLink.dataset.navigationBound = 'true';
+        tasksLink.addEventListener('click', function(event) {
+          event.preventDefault();
+          var board = document.getElementById('kanban-board-mount-point');
+          if (board) board.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+
+      if (archiveLink && archiveLink.dataset.navigationBound !== 'true') {
+        archiveLink.dataset.navigationBound = 'true';
+        archiveLink.addEventListener('click', function(event) {
+          event.preventDefault();
+          var archive = document.querySelector('.archived-section-container');
+          if (!archive) {
+            if (window.TaskUI) window.TaskUI.showOperationFeedback('error', 'Không tìm thấy khu vực lưu trữ.');
+            return;
+          }
+          archive.classList.add('open');
+          var icon = archive.querySelector('.toggle-icon');
+          if (icon) {
+            icon.classList.remove('bi-chevron-down');
+            icon.classList.add('bi-chevron-up');
+          }
+          archive.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+    },
+
+    updateNavShell: function() {
+      var role = window.AppState ? window.AppState.currentRole : null;
+      var teacherNav = document.getElementById('teacher-nav-links');
+      var studentNav = document.getElementById('student-nav-links');
+      var publicNav = document.getElementById('public-nav-links');
+
+      if (teacherNav) teacherNav.style.display = (role === 'teacher') ? 'flex' : 'none';
+      if (studentNav) studentNav.style.display = (role === 'student') ? 'flex' : 'none';
+      if (publicNav) publicNav.style.display = (role === 'public') ? 'flex' : 'none';
     }
+  };
+
+  window.App = App;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    App.init();
   });
-}
-
-// 5. Delete Confirm Submit (B6)
-if (confirmDeleteBtn) {
-  confirmDeleteBtn.addEventListener('click', async () => {
-    if (!selectedTaskId) return;
-
-    confirmDeleteBtn.disabled = true;
-    confirmDeleteBtn.innerText = "Đang xóa...";
-
-    try {
-      await window.deleteFirestoreTask(selectedTaskId);
-      window.uiCloseDeleteConfirm();
-      loadTasks(); // Tải lại sau khi Delete
-    } catch (error) {
-      alert("Có lỗi xảy ra. Xem console để biết thêm chi tiết.");
-    } finally {
-      confirmDeleteBtn.disabled = false;
-      confirmDeleteBtn.innerText = "Xóa";
-      selectedTaskId = null;
-    }
-  });
-}
-
-// Khởi tạo ban đầu (Nếu chưa có Firebase hoặc Auth chưa resolve, ta có thể hiển thị Public View trước)
-// Tuy nhiên onAuthStateChanged sẽ tự động gọi khi Firebase khởi tạo xong.
-// Nếu config bị thiếu, onAuthStateChanged sẽ không kích hoạt, ta phải gọi thủ công.
-window.addEventListener('load', () => {
-  if (window.firebaseConfigMissing || typeof firebase === 'undefined') {
-    switchView(null, null);
-  }
-});
+})(window);

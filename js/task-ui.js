@@ -1,199 +1,355 @@
-// B2, B3, B6 LAYERS: UI Rendering & UI State Management
-// Đảm nhận việc vẽ Task Card ra DOM, bật tắt Loading/Empty/Error state, và quản lý các Modals.
+/* JSI 2026 Optional Extensions V1 - Task UI Module (Derived) */
 
-// Trạng thái DOM
-const loadingState = document.getElementById('loadingState');
-const emptyState = document.getElementById('emptyState');
-const errorState = document.getElementById('errorState');
-const taskGrid = document.getElementById('taskGrid');
+(function(window) {
+  'use strict';
 
-// B2: Helper function để dịch enum
-const translateStatus = (status) => {
-  if (status === 'todo') return 'Chưa thực hiện';
-  if (status === 'doing') return 'Đang thực hiện';
-  if (status === 'done') return 'Đã hoàn thành';
-  return status;
-};
+  var TaskUI = {
+    showOperationFeedback: function(type, message) {
+      var existing = document.getElementById('task-operation-feedback');
+      if (existing) existing.remove();
 
-const translatePriority = (priority) => {
-  if (priority === 'high') return 'Cao';
-  if (priority === 'medium') return 'Trung bình';
-  if (priority === 'low') return 'Thấp';
-  return priority;
-};
+      var feedback = document.createElement('div');
+      feedback.id = 'task-operation-feedback';
+      feedback.className = 'alert alert-' + (type === 'success' ? 'success' : 'danger') + ' shadow task-operation-feedback';
+      feedback.setAttribute('role', type === 'success' ? 'status' : 'alert');
+      feedback.textContent = message;
+      document.body.appendChild(feedback);
 
-// B2: UI States
-window.uiShowLoading = () => {
-  loadingState.classList.remove('hidden');
-  emptyState.classList.add('hidden');
-  errorState.classList.add('hidden');
-  taskGrid.classList.add('hidden');
-};
+      window.setTimeout(function() {
+        if (feedback.parentNode) feedback.remove();
+      }, 5000);
+    },
 
-window.uiShowEmpty = () => {
-  loadingState.classList.add('hidden');
-  emptyState.classList.remove('hidden');
-  errorState.classList.add('hidden');
-  taskGrid.classList.add('hidden');
-};
+    showConfirmModal: function(options, onConfirm) {
+      options = options || {};
+      var existing = document.getElementById('app-confirm-modal');
+      if (existing) existing.remove();
 
-window.uiShowError = (msg = '') => {
-  if (msg) errorState.querySelector('p').innerText = msg;
-  loadingState.classList.add('hidden');
-  emptyState.classList.add('hidden');
-  errorState.classList.remove('hidden');
-  taskGrid.classList.add('hidden');
-};
+      var title = options.title || 'Xác nhận';
+      var message = options.message || 'Bạn có chắc chắn muốn thực hiện thao tác này?';
+      var confirmText = options.confirmText || 'Xác nhận';
+      var confirmBtnClass = options.confirmBtnClass || 'btn-danger';
 
-// B3 & B6: Render Array
-window.uiRenderTasks = (tasksToRender, role = 'student') => {
-  if (!tasksToRender || tasksToRender.length === 0) {
-    window.uiShowEmpty();
-    return;
-  }
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
 
-  loadingState.classList.add('hidden');
-  emptyState.classList.add('hidden');
-  errorState.classList.add('hidden');
-  taskGrid.classList.remove('hidden');
-  
-  // Array.map() với Arrow Function (B3)
-  const htmlContent = tasksToRender.map((task) => {
-    // B6: Tùy chỉnh action buttons theo role
-    let actionButtons = '';
-    if (role === 'teacher') {
-      actionButtons = `
-        <div class="card-actions">
-          <button type="button" class="btn btn-outline btn-small edit-task-btn" data-task-id="${task.id}" aria-label="Sửa nhiệm vụ ${task.id}">Sửa</button>
-          <button type="button" class="btn btn-danger btn-small delete-task-btn" data-task-id="${task.id}" aria-label="Xóa nhiệm vụ ${task.id}">Xóa</button>
-        </div>
-      `;
+      var modalHtml = '<div class="modal fade" id="app-confirm-modal" tabindex="-1" aria-hidden="true">' +
+        '<div class="modal-dialog modal-dialog-centered modal-sm">' +
+          '<div class="modal-content shadow border-0">' +
+            '<div class="modal-header py-2 bg-light">' +
+              '<h6 class="modal-header-title mb-0 fw-bold text-dark"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>' + escapeHtml(title) + '</h6>' +
+              '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>' +
+            '</div>' +
+            '<div class="modal-body py-3 small text-secondary">' + escapeHtml(message) + '</div>' +
+            '<div class="modal-footer py-2 d-flex justify-content-end gap-2 bg-light">' +
+              '<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>' +
+              '<button type="button" class="btn btn-sm ' + confirmBtnClass + '" id="app-confirm-btn">' + escapeHtml(confirmText) + '</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+      var div = document.createElement('div');
+      div.innerHTML = modalHtml;
+      var modalEl = div.firstElementChild;
+      document.body.appendChild(modalEl);
+
+      var bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+      modalEl.querySelector('#app-confirm-btn').onclick = function() {
+        bsModal.hide();
+        if (typeof onConfirm === 'function') onConfirm();
+      };
+
+      bsModal.show();
+    },
+
+    /**
+     * Shows Task Detail Modal with 5-Tab Container
+     */
+    showTaskDetail: function(taskId, initialTab) {
+      var tasks = window.AppBridge ? window.AppBridge.getTasks() : (window.currentTasks || []);
+      var task = tasks.find(function(t) { return (t.id === taskId || t.taskId === taskId); });
+
+      if (!task) {
+        console.error('Task not found:', taskId);
+        return;
+      }
+
+      window.selectedTaskId = taskId;
+
+      var modalEl = document.getElementById('task-detail-modal');
+      if (!modalEl) {
+        modalEl = createDetailModal();
+        document.body.appendChild(modalEl);
+      }
+
+      var modalTitle = modalEl.querySelector('#detail-modal-title');
+      if (modalTitle) modalTitle.textContent = '#' + (task.id || 'T') + ' - ' + task.title;
+
+      var bodyContainer = modalEl.querySelector('#detail-modal-body');
+      if (bodyContainer && window.TaskDetailController) {
+        window.TaskDetailController.mountContainer(task, bodyContainer, initialTab || 'resources');
+      }
+
+      var bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      bsModal.show();
+    },
+
+    /**
+     * Shows Teacher Create Task Modal with embedded Resource Manager
+     */
+    showCreateModal: function() {
+      this.showTaskFormModal(null);
+    },
+
+    /**
+     * Shows Teacher Edit Task Modal with embedded Resource Manager
+     */
+    showEditModal: function(taskId) {
+      var tasks = window.AppBridge ? window.AppBridge.getTasks() : (window.currentTasks || []);
+      var task = tasks.find(function(t) { return (t.id === taskId || t.taskId === taskId); });
+      this.showTaskFormModal(task);
+    },
+
+    /**
+     * Unified Task Form Modal (Create or Edit)
+     */
+    showTaskFormModal: function(taskToEdit) {
+      var isEdit = !!taskToEdit;
+      var modalEl = document.getElementById('task-form-modal');
+      if (!modalEl) {
+        modalEl = createFormModal();
+        document.body.appendChild(modalEl);
+      }
+
+      var modalTitle = modalEl.querySelector('#form-modal-title');
+      if (modalTitle) modalTitle.textContent = isEdit ? ('Chỉnh sửa nhiệm vụ #' + taskToEdit.id) : 'Thêm nhiệm vụ mới';
+
+      // Populate form fields
+      var form = modalEl.querySelector('#task-editor-form');
+      form.reset();
+
+      if (isEdit) {
+        form.querySelector('#form-title').value = taskToEdit.title || '';
+        form.querySelector('#form-topic').value = taskToEdit.topic || '';
+        form.querySelector('#form-deadline').value = taskToEdit.deadline || '';
+        form.querySelector('#form-status').value = taskToEdit.status || 'todo';
+        form.querySelector('#form-priority').value = taskToEdit.priority || 'medium';
+        form.querySelector('#form-description').value = taskToEdit.description || '';
+      } else {
+        form.querySelector('#form-status').value = 'todo';
+        form.querySelector('#form-priority').value = 'medium';
+      }
+
+      // Track resources array for form
+      var currentResources = isEdit && Array.isArray(taskToEdit.resources) ? JSON.parse(JSON.stringify(taskToEdit.resources)) : [];
+
+      var resourceSectionEl = modalEl.querySelector('#form-resource-manager-container');
+      if (resourceSectionEl && window.ResourceManager) {
+        window.ResourceManager.renderFormManager(currentResources, resourceSectionEl, function(updatedResources) {
+          currentResources = updatedResources;
+        });
+      }
+
+      var bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+      // Save Form Submit
+      form.onsubmit = async function(e) {
+        e.preventDefault();
+        var feedbackEl = modalEl.querySelector('#form-save-feedback');
+        var saveButton = form.querySelector('button[type="submit"]');
+        var originalButtonHtml = saveButton.innerHTML;
+
+        if (feedbackEl) {
+          feedbackEl.className = 'alert d-none mb-3';
+          feedbackEl.textContent = '';
+        }
+
+        var cleanedResources;
+        try {
+          cleanedResources = normalizeResourcesForSave(currentResources);
+        } catch (validationError) {
+          showFormFeedback(feedbackEl, 'danger', validationError.message);
+          return;
+        }
+
+        var payload = {
+          title: form.querySelector('#form-title').value.trim(),
+          topic: form.querySelector('#form-topic').value.trim(),
+          deadline: form.querySelector('#form-deadline').value,
+          status: form.querySelector('#form-status').value,
+          priority: form.querySelector('#form-priority').value,
+          description: form.querySelector('#form-description').value.trim(),
+          resources: cleanedResources
+        };
+
+        saveButton.disabled = true;
+        saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Đang lưu...';
+
+        try {
+          if (!window.TaskFirestore) throw new Error('TASK_STORAGE_UNAVAILABLE');
+
+          if (isEdit) {
+            await window.TaskFirestore.updateTask(taskToEdit.id, payload);
+          } else {
+            await window.TaskFirestore.createTask(payload);
+          }
+
+          var successMessage = 'Đã lưu nhiệm vụ thành công.';
+          if (window.AppBridge) {
+            try {
+              await window.AppBridge.reloadTasks();
+            } catch (reloadError) {
+              console.warn('[V1] TASK_SAVED_REFRESH_FAILED', reloadError);
+              successMessage = 'Đã lưu nhiệm vụ. Hãy tải lại trang để cập nhật bảng.';
+            }
+          }
+          showFormFeedback(feedbackEl, 'success', successMessage);
+          TaskUI.showOperationFeedback('success', successMessage);
+          window.setTimeout(function() { bsModal.hide(); }, 350);
+        } catch (saveError) {
+          console.error('[V1] TASK_SAVE_FAILED', saveError);
+          showFormFeedback(feedbackEl, 'danger', getSaveErrorMessage(saveError));
+        } finally {
+          saveButton.disabled = false;
+          saveButton.innerHTML = originalButtonHtml;
+        }
+      };
+
+      bsModal.show();
     }
+  };
 
-    return `
-      <button type="button" class="task-card" data-task-id="${task.id}" aria-label="Xem chi tiết nhiệm vụ ${task.id}">
-        <div class="card-header">
-          <span class="task-id">#${task.id}</span>
-          <span class="task-status status-${task.status}">${translateStatus(task.status)}</span>
-        </div>
-        <div class="task-title">${task.title}</div>
-        <div class="task-desc">${task.description}</div>
-        <div class="card-footer">
-          <div class="task-meta">
-            Chủ đề: <strong>${task.topic}</strong>
-          </div>
-        </div>
-        <div class="card-footer" style="border-top: none; padding-top: 4px;">
-          <div class="task-meta">
-            Hạn chót: <strong>${task.deadline}</strong>
-          </div>
-          <div class="task-meta">
-            Ưu tiên: <strong class="priority-${task.priority}">${translatePriority(task.priority)}</strong>
-          </div>
-        </div>
-        ${actionButtons}
-      </button>
-    `;
-  }).join("");
-  
-  taskGrid.innerHTML = htmlContent;
-};
-
-// B3: Modal Detail (Read-Only)
-const taskModal = document.getElementById('taskModal');
-const modalBody = document.getElementById('modalBody');
-const closeDetailModalBtn = document.getElementById('closeDetailModalBtn');
-const closeDetailFooterBtn = document.getElementById('closeDetailFooterBtn');
-
-window.uiOpenTaskDetail = (task) => {
-  modalBody.innerHTML = `
-    <p><strong>ID:</strong> #${task.id}</p>
-    <p><strong>Tiêu đề:</strong> ${task.title}</p>
-    <p><strong>Chủ đề:</strong> ${task.topic}</p>
-    <p><strong>Hạn chót:</strong> ${task.deadline}</p>
-    <p><strong>Trạng thái:</strong> <span class="task-status status-${task.status}">${translateStatus(task.status)}</span></p>
-    <p><strong>Ưu tiên:</strong> <span class="priority-${task.priority}">${translatePriority(task.priority)}</span></p>
-    <p><strong>Mô tả chi tiết:</strong> ${task.description}</p>
-  `;
-  taskModal.classList.remove('hidden');
-  closeDetailModalBtn.focus();
-};
-
-window.uiCloseTaskDetail = () => {
-  taskModal.classList.add('hidden');
-};
-
-[closeDetailModalBtn, closeDetailFooterBtn].forEach(btn => {
-  if (btn) btn.addEventListener('click', (e) => { e.stopPropagation(); window.uiCloseTaskDetail(); });
-});
-
-taskModal.addEventListener('click', (e) => {
-  if (e.target === taskModal) window.uiCloseTaskDetail();
-});
-
-// B6: Shared Create/Edit Form Modal
-const taskFormModal = document.getElementById('taskFormModal');
-const formModalTitle = document.getElementById('formModalTitle');
-const taskForm = document.getElementById('taskForm');
-const closeFormModalBtn = document.getElementById('closeFormModalBtn');
-const cancelFormBtn = document.getElementById('cancelFormBtn');
-
-window.uiOpenTaskForm = (task = null) => {
-  if (task) {
-    formModalTitle.innerText = "Sửa nhiệm vụ";
-    document.getElementById('taskTitle').value = task.title;
-    document.getElementById('taskTopic').value = task.topic;
-    document.getElementById('taskDeadline').value = task.deadline;
-    document.getElementById('taskStatus').value = task.status;
-    document.getElementById('taskPriority').value = task.priority;
-    document.getElementById('taskDesc').value = task.description;
-  } else {
-    formModalTitle.innerText = "Thêm nhiệm vụ mới";
-    taskForm.reset();
+  function createDetailModal() {
+    var modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'task-detail-modal';
+    modal.tabIndex = -1;
+    modal.innerHTML = '<div class="modal-dialog modal-lg modal-dialog-centered">' +
+      '<div class="modal-content">' +
+        '<div class="modal-header">' +
+          '<h5 class="modal-title" id="detail-modal-title">Chi tiết nhiệm vụ</h5>' +
+          '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>' +
+        '</div>' +
+        '<div class="modal-body" id="detail-modal-body"></div>' +
+      '</div>' +
+    '</div>';
+    return modal;
   }
-  taskFormModal.classList.remove('hidden');
-  closeFormModalBtn.focus();
-};
 
-window.uiCloseTaskForm = () => {
-  taskFormModal.classList.add('hidden');
-};
-
-[closeFormModalBtn, cancelFormBtn].forEach(btn => {
-  if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); window.uiCloseTaskForm(); });
-});
-
-taskFormModal.addEventListener('click', (e) => {
-  if (e.target === taskFormModal) window.uiCloseTaskForm();
-});
-
-// B6: Delete Confirmation Modal
-const deleteConfirmModal = document.getElementById('deleteConfirmModal');
-const closeDeleteModalBtn = document.getElementById('closeDeleteModalBtn');
-const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-
-window.uiOpenDeleteConfirm = () => {
-  deleteConfirmModal.classList.remove('hidden');
-  closeDeleteModalBtn.focus();
-};
-
-window.uiCloseDeleteConfirm = () => {
-  deleteConfirmModal.classList.add('hidden');
-};
-
-[closeDeleteModalBtn, cancelDeleteBtn].forEach(btn => {
-  if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); window.uiCloseDeleteConfirm(); });
-});
-
-deleteConfirmModal.addEventListener('click', (e) => {
-  if (e.target === deleteConfirmModal) window.uiCloseDeleteConfirm();
-});
-
-// Escape key to close any modal
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    if (!taskModal.classList.contains('hidden')) window.uiCloseTaskDetail();
-    if (!taskFormModal.classList.contains('hidden')) window.uiCloseTaskForm();
-    if (!deleteConfirmModal.classList.contains('hidden')) window.uiCloseDeleteConfirm();
+  function createFormModal() {
+    var modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'task-form-modal';
+    modal.tabIndex = -1;
+    modal.innerHTML = '<div class="modal-dialog modal-lg modal-dialog-centered">' +
+      '<div class="modal-content">' +
+        '<div class="modal-header">' +
+          '<h5 class="modal-title" id="form-modal-title">Tạo / Chỉnh sửa nhiệm vụ</h5>' +
+          '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>' +
+        '</div>' +
+        '<div class="modal-body">' +
+          '<form id="task-editor-form">' +
+            '<div class="row g-3 mb-3">' +
+              '<div class="col-md-8">' +
+                '<label class="form-label font-weight-bold">Tiêu đề nhiệm vụ (*)</label>' +
+                '<input type="text" class="form-control" id="form-title" required>' +
+              '</div>' +
+              '<div class="col-md-4">' +
+                '<label class="form-label font-weight-bold">Chủ đề (*)</label>' +
+                '<input type="text" class="form-control" id="form-topic" required>' +
+              '</div>' +
+            '</div>' +
+            '<div class="row g-3 mb-3">' +
+              '<div class="col-md-4">' +
+                '<label class="form-label font-weight-bold">Hạn nộp (*)</label>' +
+                '<input type="date" class="form-control" id="form-deadline" required>' +
+              '</div>' +
+              '<div class="col-md-4">' +
+                '<label class="form-label font-weight-bold">Trạng thái (*)</label>' +
+                '<select class="form-select" id="form-status">' +
+                  '<option value="todo">Cần làm</option>' +
+                  '<option value="doing">Đang thực hiện</option>' +
+                  '<option value="review">Đang kiểm tra</option>' +
+                  '<option value="done">Hoàn thành</option>' +
+                '</select>' +
+              '</div>' +
+              '<div class="col-md-4">' +
+                '<label class="form-label font-weight-bold">Độ ưu tiên (*)</label>' +
+                '<select class="form-select" id="form-priority">' +
+                  '<option value="low">Thấp</option>' +
+                  '<option value="medium" selected>Trung bình</option>' +
+                  '<option value="high">Cao</option>' +
+                '</select>' +
+              '</div>' +
+            '</div>' +
+            '<div class="mb-3">' +
+              '<label class="form-label font-weight-bold">Mô tả chi tiết</label>' +
+              '<textarea class="form-control" id="form-description" rows="3"></textarea>' +
+            '</div>' +
+            '<div id="form-resource-manager-container"></div>' +
+            '<div id="form-save-feedback" class="alert d-none mb-3" role="status" aria-live="polite"></div>' +
+            '<div class="modal-footer px-0 pb-0 mt-3">' +
+              '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>' +
+              '<button type="submit" class="btn btn-danger" style="background-color: #D32F2F; border-color: #D32F2F;">Lưu nhiệm vụ</button>' +
+            '</div>' +
+          '</form>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+    return modal;
   }
-});
+
+  function normalizeResourcesForSave(resources) {
+    return (Array.isArray(resources) ? resources : []).reduce(function(cleaned, resource) {
+      var title = String(resource.title || '').trim();
+      var url = String(resource.url || '').trim();
+
+      // Clicking "add resource" and leaving the whole row blank should not
+      // poison an otherwise valid task save.
+      if (!title && !url) return cleaned;
+
+      if (!title || !url) {
+        throw new Error('Mỗi tài liệu cần có đủ tiêu đề và đường dẫn URL, hoặc hãy xóa dòng đang để dở.');
+      }
+
+      if (!/^https:\/\//i.test(url)) {
+        throw new Error('Đường dẫn tài liệu phải bắt đầu bằng https://');
+      }
+
+      var normalized = Object.assign({}, resource, {
+        title: title,
+        url: url,
+        order: cleaned.length
+      });
+      cleaned.push(normalized);
+      return cleaned;
+    }, []);
+  }
+
+  function showFormFeedback(feedbackEl, type, message) {
+    if (!feedbackEl) return;
+    feedbackEl.className = 'alert alert-' + type + ' mb-3';
+    feedbackEl.textContent = message;
+    feedbackEl.scrollIntoView({ block: 'nearest' });
+  }
+
+  function getSaveErrorMessage(error) {
+    var code = error && error.code ? String(error.code) : '';
+    if (code === 'v1/backend-contract-not-ready') {
+      return 'Firebase Test Project chưa kích hoạt Rules/backfill V1 cho tài liệu, trạng thái Review hoặc lifecycle. Các trường Core vẫn có thể lưu; hãy bỏ tài liệu V1 hoặc chọn trạng thái Core.';
+    }
+    if (code.indexOf('permission-denied') !== -1) {
+      return 'Firebase từ chối quyền ghi. Dữ liệu chưa được lưu; vui lòng kiểm tra Rules và vai trò Teacher.';
+    }
+    if (code === 'v1/task-not-found') {
+      return 'Không tìm thấy nhiệm vụ cần cập nhật. Hãy tải lại trang rồi thử lại.';
+    }
+    return 'Không thể lưu nhiệm vụ. Dữ liệu chưa thay đổi; vui lòng thử lại.';
+  }
+
+  window.TaskUI = TaskUI;
+})(window);

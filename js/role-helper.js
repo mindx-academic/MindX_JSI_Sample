@@ -7,22 +7,30 @@ window.ensureUserProfileAndGetRole = async (uid) => {
   
   try {
     const docSnap = await userRef.get();
-    
-    if (docSnap.exists) {
-      // Đã có profile, trả về role
-      const data = docSnap.data();
-      return data.role || 'student';
-    } else {
-      // Chưa có profile (mới đăng ký), bootstrap mặc định là student
-      console.log("Bootstrap new user profile with role: student");
-      await userRef.set({
-        role: 'student'
-      });
-      return 'student';
+        if (docSnap.exists) {
+        // Đã có profile, kiểm tra role
+        const data = docSnap.data();
+        if (data.role === 'student' || data.role === 'teacher') {
+            return data.role;
+        } else {
+            throw new Error("INVALID_USER_ROLE");
+        }
+      } else {
+        // Chưa có profile (mới đăng ký), bootstrap mặc định là student
+        console.log("Bootstrap new user profile with role: student");
+        await userRef.set({
+          role: 'student'
+        });
+        return 'student';
+      }
+    } catch (error) {
+      if (error.message === "INVALID_USER_ROLE") throw error;
+      console.error("Lỗi khi kiểm tra/tạo profile:", error);
+      if (window.TaskUI) {
+        window.TaskUI.showOperationFeedback('error', "Không thể tải thông tin phân quyền. Vui lòng thử lại hoặc đăng xuất.");
+      } else {
+        console.warn("Không thể tải thông tin phân quyền. Vui lòng thử lại hoặc đăng xuất.");
+      }
+      throw error;
     }
-  } catch (error) {
-    console.error("Lỗi khi kiểm tra/tạo profile:", error);
-    // Fallback an toàn nhất
-    return 'student'; 
-  }
 };
