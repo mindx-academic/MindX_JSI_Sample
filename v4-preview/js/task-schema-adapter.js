@@ -3,6 +3,17 @@
 (function(window) {
   'use strict';
 
+  var DEFAULT_TITLES = {
+    'T001': 'Ôn tập DOM và Event',
+    'T002': 'Ôn tập HTML và CSS',
+    'T003': 'Hoàn thành giao diện mini project',
+    'T004': 'Chuẩn bị slide giới thiệu dự án',
+    'T005': 'Kiểm tra bố cục website',
+    'T006': 'Quay video demo sản phẩm',
+    'T007': 'Chỉnh sửa dự án theo nhận xét',
+    'T008': 'Nộp bản kế hoạch sản phẩm'
+  };
+
   var TaskSchemaAdapter = {
     /**
      * Normalizes a raw Firestore or local task document into a valid V1 task contract.
@@ -18,8 +29,12 @@
 
       var normalized = Object.assign({}, rawTask);
 
-      // Core 6 fields preservation
-      normalized.title = normalized.title || 'Nhiệm vụ chưa có tiêu đề';
+      // Core 6 fields preservation with default title mapping fallback
+      var defaultTitle = (normalized.id && DEFAULT_TITLES[normalized.id]) ? DEFAULT_TITLES[normalized.id] : 'Nhiệm vụ chưa có tiêu đề';
+      if (!normalized.title || normalized.title === 'Nhiệm vụ chưa có tiêu đề') {
+        normalized.title = defaultTitle;
+      }
+
       normalized.topic = normalized.topic || 'Chưa phân loại';
       normalized.deadline = normalized.deadline || new Date().toISOString().split('T')[0];
       

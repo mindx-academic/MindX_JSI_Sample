@@ -1,6 +1,8 @@
 (function() {
   'use strict';
 
+  var FETCH_TIMEOUT_MS = 30000; // 30s client timeout contract
+
   var AIAssistantController = {
 
     renderAITabContent: function(container, taskId) {
@@ -8,7 +10,7 @@
 
       var role = window.AppBridge ? window.AppBridge.getCurrentRole() : (window.currentRole || 'student');
       if (role !== 'teacher') {
-        container.innerHTML = '<div class="alert alert-warning m-3">Trợ lý AI chỉ dành cho tài khoản Giáo viên.</div>';
+        container.innerHTML = '<div class="alert alert-warning m-3"><i class="bi bi-exclamation-triangle me-2"></i>Trợ lý AI chỉ dành cho tài khoản Giáo viên.</div>';
         return;
       }
 
@@ -64,17 +66,23 @@
         btn.disabled = true;
         alertArea.classList.add('d-none');
 
-        var testRes = await window.BYOKManager.validateKeyOnline(val);
-        spin.classList.add('d-none');
-        btn.disabled = false;
-
-        if (testRes.success) {
-          window.BYOKManager.setKey(val);
-          self.renderAIWorkspace(container, taskId);
-        } else {
+        try {
+          var testRes = await window.BYOKManager.validateKeyOnline(val);
+          if (testRes.success) {
+            window.BYOKManager.setKey(val);
+            self.renderAIWorkspace(container, taskId);
+          } else {
+            alertArea.className = 'alert alert-danger mb-3';
+            alertArea.textContent = testRes.message || 'Kết nối thất bại. Vui lòng kiểm tra lại API key.';
+            alertArea.classList.remove('d-none');
+          }
+        } catch (err) {
           alertArea.className = 'alert alert-danger mb-3';
-          alertArea.textContent = testRes.message || 'Kết nối thất bại. Vui lòng kiểm tra lại API key.';
+          alertArea.textContent = 'Lỗi kết nối kiểm tra API key: ' + (err.message || 'Không xác định.');
           alertArea.classList.remove('d-none');
+        } finally {
+          spin.classList.add('d-none');
+          btn.disabled = false;
         }
       });
     },
@@ -90,6 +98,7 @@
             '<div>' +
               '<h6 class="mb-1 text-danger fw-bold"><i class="bi bi-stars me-2"></i>Trợ lý AI Giáo viên (Gemini BYOK)</h6>' +
               '<span class="badge bg-light text-dark border"><i class="bi bi-key me-1"></i>Key: ' + maskedKey + '</span>' +
+              '<span class="text-success small ms-2"><i class="bi bi-check-circle-fill me-1"></i>Kết nối Gemini thành công.</span>' +
             '</div>' +
             '<div>' +
               '<button class="btn btn-sm btn-outline-secondary me-2" id="ai-change-key-btn"><i class="bi bi-pencil me-1"></i>Thay API Key</button>' +
@@ -151,6 +160,7 @@
     },
 
     runTaskSummary: async function(container, taskId) {
+      var self = this;
       var spin = container.querySelector('#summary-spin');
       var btn = container.querySelector('#ai-summary-btn');
       var resultArea = container.querySelector('#ai-summary-result');
@@ -160,32 +170,38 @@
       spin.classList.remove('d-none');
       btn.disabled = true;
 
-      var res = await this.callAIEndpoint('task_summary', taskId);
-      spin.classList.add('d-none');
-      btn.disabled = false;
+      try {
+        var res = await this.callAIEndpoint('task_summary', taskId);
+        if (res.error) {
+          alertArea.className = 'alert alert-danger mb-3';
+          alertArea.textContent = res.error;
+          alertArea.classList.remove('d-none');
+          return;
+        }
 
-      if (res.error) {
+        var d = res.data || {};
+        var signalsHtml = (Array.isArray(d.notableSignals) && d.notableSignals.length > 0)
+          ? '<ul class="mb-2 ps-3 small text-secondary">' + d.notableSignals.map(function(s) { return '<li>' + self.escapeHtml(s) + '</li>'; }).join('') + '</ul>'
+          : '';
+        var actionsHtml = (Array.isArray(d.suggestedTeacherActions) && d.suggestedTeacherActions.length > 0)
+          ? '<ul class="mb-0 ps-3 small text-success fw-semibold">' + d.suggestedTeacherActions.map(function(a) { return '<li>' + self.escapeHtml(a) + '</li>'; }).join('') + '</ul>'
+          : '';
+
+        resultArea.innerHTML =
+          '<div class="alert alert-light border mb-2">' +
+            '<div class="fw-bold text-primary mb-1"><i class="bi bi-journal-check me-1"></i>' + self.escapeHtml(d.headline || 'Tóm tắt nhiệm vụ') + '</div>' +
+            '<div class="small text-dark mb-2">' + self.escapeHtml(d.progressSummary || '') + '</div>' +
+            (signalsHtml ? '<div class="fw-semibold small text-muted">Tín hiệu đáng chú ý:</div>' + signalsHtml : '') +
+            (actionsHtml ? '<div class="fw-semibold small text-muted mt-2">Gợi ý hành động:</div>' + actionsHtml : '') +
+          '</div>';
+      } catch (err) {
         alertArea.className = 'alert alert-danger mb-3';
-        alertArea.textContent = res.error;
+        alertArea.textContent = 'Không thể phân tích tóm tắt: ' + (err.message || 'Lỗi không xác định.');
         alertArea.classList.remove('d-none');
-        return;
+      } finally {
+        spin.classList.add('d-none');
+        btn.disabled = false;
       }
-
-      var d = res.data || {};
-      var signalsHtml = (Array.isArray(d.notableSignals) && d.notableSignals.length > 0)
-        ? '<ul class="mb-2 ps-3 small text-secondary">' + d.notableSignals.map(function(s) { return '<li>' + self.escapeHtml(s) + '</li>'; }).join('') + '</ul>'
-        : '';
-      var actionsHtml = (Array.isArray(d.suggestedTeacherActions) && d.suggestedTeacherActions.length > 0)
-        ? '<ul class="mb-0 ps-3 small text-success fw-semibold">' + d.suggestedTeacherActions.map(function(a) { return '<li>' + self.escapeHtml(a) + '</li>'; }).join('') + '</ul>'
-        : '';
-
-      resultArea.innerHTML =
-        '<div class="alert alert-light border mb-2">' +
-          '<div class="fw-bold text-primary mb-1">' + self.escapeHtml(d.headline || 'Tóm tắt nhiệm vụ') + '</div>' +
-          '<div class="small text-dark mb-2">' + self.escapeHtml(d.progressSummary || '') + '</div>' +
-          (signalsHtml ? '<div class="fw-semibold small text-muted">Tín hiệu đáng chú ý:</div>' + signalsHtml : '') +
-          (actionsHtml ? '<div class="fw-semibold small text-muted">Gợi ý hành động:</div>' + actionsHtml : '') +
-        '</div>';
     },
 
     runSupportDetection: async function(container, taskId) {
@@ -199,41 +215,47 @@
       spin.classList.remove('d-none');
       btn.disabled = true;
 
-      var res = await this.callAIEndpoint('support_detection', taskId);
-      spin.classList.add('d-none');
-      btn.disabled = false;
+      try {
+        var res = await this.callAIEndpoint('support_detection', taskId);
+        if (res.error) {
+          alertArea.className = 'alert alert-danger mb-3';
+          alertArea.textContent = res.error;
+          alertArea.classList.remove('d-none');
+          return;
+        }
 
-      if (res.error) {
-        alertArea.className = 'alert alert-danger mb-3';
-        alertArea.textContent = res.error;
-        alertArea.classList.remove('d-none');
-        return;
-      }
+        var list = (res.data && Array.isArray(res.data.students)) ? res.data.students : [];
+        if (list.length === 0) {
+          resultArea.innerHTML = '<div class="alert alert-success mb-0 small"><i class="bi bi-check-circle me-1"></i>Không phát hiện học viên nào gặp khó khăn nghiêm trọng trong nhiệm vụ này.</div>';
+          return;
+        }
 
-      var list = (res.data && Array.isArray(res.data.students)) ? res.data.students : [];
-      if (list.length === 0) {
-        resultArea.innerHTML = '<div class="alert alert-success mb-0 small"><i class="bi bi-check-circle me-1"></i>Không phát hiện học viên nào gặp khó khăn nghiêm trọng trong nhiệm vụ này.</div>';
-        return;
-      }
+        var cardsHtml = list.map(function(item) {
+          var badgeClass = item.priority === 'high' ? 'bg-danger' : (item.priority === 'medium' ? 'bg-warning text-dark' : 'bg-info text-dark');
+          var priorityText = item.priority === 'high' ? 'Ưu tiên cao' : (item.priority === 'medium' ? 'Ưu tiên trung bình' : 'Khác');
+          var reasons = Array.isArray(item.reasons) ? item.reasons.map(function(r) { return self.escapeHtml(r); }).join(', ') : '';
 
-      var cardsHtml = list.map(function(item) {
-        var badgeClass = item.priority === 'high' ? 'bg-danger' : (item.priority === 'medium' ? 'bg-warning text-dark' : 'bg-info text-dark');
-        var priorityText = item.priority === 'high' ? 'Ưu tiên cao' : (item.priority === 'medium' ? 'Ưu tiên trung bình' : 'Khác');
-        var reasons = Array.isArray(item.reasons) ? item.reasons.map(function(r) { return self.escapeHtml(r); }).join(', ') : '';
-
-        return '<div class="card border mb-2">' +
-          '<div class="card-body p-2 px-3 d-flex align-items-center justify-content-between">' +
-            '<div>' +
-              '<div class="fw-bold small">' + self.escapeHtml(item.studentName) + ' <span class="text-muted font-monospace">(' + self.escapeHtml(item.studentAlias) + ')</span></div>' +
-              '<div class="text-muted super-small">' + self.escapeHtml(reasons) + '</div>' +
-              '<div class="text-success small fw-semibold mt-1"><i class="bi bi-arrow-right-short"></i>' + self.escapeHtml(item.suggestedAction) + '</div>' +
+          return '<div class="card border mb-2 shadow-sm">' +
+            '<div class="card-body p-2 px-3 d-flex align-items-center justify-content-between">' +
+              '<div>' +
+                '<div class="fw-bold small">' + self.escapeHtml(item.studentName) + ' <span class="text-muted font-monospace">(' + self.escapeHtml(item.studentAlias) + ')</span></div>' +
+                '<div class="text-muted super-small">' + self.escapeHtml(reasons) + '</div>' +
+                '<div class="text-success small fw-semibold mt-1"><i class="bi bi-arrow-right-short me-1"></i>' + self.escapeHtml(item.suggestedAction) + '</div>' +
+              '</div>' +
+              '<span class="badge ' + badgeClass + ' me-2">' + priorityText + '</span>' +
             '</div>' +
-            '<span class="badge ' + badgeClass + ' me-2">' + priorityText + '</span>' +
-          '</div>' +
-        '</div>';
-      }).join('');
+          '</div>';
+        }).join('');
 
-      resultArea.innerHTML = cardsHtml;
+        resultArea.innerHTML = cardsHtml;
+      } catch (err) {
+        alertArea.className = 'alert alert-danger mb-3';
+        alertArea.textContent = 'Không thể quét danh sách học viên: ' + (err.message || 'Lỗi không xác định.');
+        alertArea.classList.remove('d-none');
+      } finally {
+        spin.classList.add('d-none');
+        btn.disabled = false;
+      }
     },
 
     requestFeedbackSuggestion: async function(taskId, studentUid) {
@@ -247,12 +269,17 @@
 
       var key = window.BYOKManager.getKey();
       if (!window.firebase || !window.firebase.auth || !window.firebase.auth().currentUser) {
-        return { error: 'Phiên đăng nhập đã hết hạn.' };
+        return { error: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' };
       }
+
+      var controller = new AbortController();
+      var timeoutId = setTimeout(function() {
+        controller.abort();
+      }, FETCH_TIMEOUT_MS);
 
       try {
         var token = await window.firebase.auth().currentUser.getIdToken();
-        var baseUrl = (window.JSI_API_CONFIG && window.JSI_API_CONFIG.baseUrl) ? window.JSI_API_CONFIG.baseUrl : 'http://localhost:5000';
+        var baseUrl = (window.JSI_API_CONFIG && window.JSI_API_CONFIG.baseUrl) ? window.JSI_API_CONFIG.baseUrl : 'https://server-v4-preview-staging.vercel.app';
         var endpoint = (window.JSI_API_CONFIG && window.JSI_API_CONFIG.endpoints && window.JSI_API_CONFIG.endpoints.teacherAssist) ? window.JSI_API_CONFIG.endpoints.teacherAssist : '/api/ai/teacher-assist';
 
         var resp = await fetch(baseUrl + endpoint, {
@@ -266,8 +293,11 @@
             taskId: taskId,
             studentUid: studentUid || undefined,
             teacherGeminiKey: key
-          })
+          }),
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         var data = await resp.json();
         if (resp.ok && data.status === 'success') {
@@ -276,7 +306,11 @@
           return { error: data.error || 'Lỗi xử lý Trợ lý AI.' };
         }
       } catch (err) {
-        return { error: 'Không thể kết nối máy chủ AI: ' + err.message };
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+          return { error: 'Kết nối máy chủ AI vượt quá thời gian quy định (30 giây). Vui lòng thử lại.' };
+        }
+        return { error: 'Không thể kết nối máy chủ AI: ' + (err.message || 'Lỗi mạng.') };
       }
     },
 
