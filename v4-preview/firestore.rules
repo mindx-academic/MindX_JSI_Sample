@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isTeacher() {
+      return isAuthenticated() && 
+             (getUserData().role == 'teacher' || 
+              request.auth.token.email == 'teacher@mindx.edu.vn' ||
+              request.auth.token.email == 'academic@mindx.vn' ||
+              request.auth.token.email.matches('.*teacher.*'));
+    }
+
+    function isStudent() {
+      return isAuthenticated() && !isTeacher();
+    }
+
+    // User profile access
+    match /users/{userId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Tasks Collection (V1 + V2 + V3 preserved)
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isTeacher() &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        request.resource.data.status in ['todo', 'doing', 'review', 'done'] &&
+        (!('resources' in request.resource.data) || (request.resource.data.resources is list && request.resource.data.resources.size() <= 20));
+
+      allow update: if isTeacher() &&
+        request.resource.data.status in ['todo', 'doing', 'review', 'done'] &&
+        (!('resources' in request.resource.data) || (request.resource.data.resources is list && request.resource.data.resources.size() <= 20));
+
+      allow delete: if false; // Deny client physical delete
+
+      // V2 Sub-collection: Comments
+      match /comments/{commentId} {
+        allow read: if isAuthenticated();
+
+        allow create: if isAuthenticated() &&
+          request.resource.data.authorUid == request.auth.uid &&
+          request.resource.data.text is string &&
+          request.resource.data.text.size() > 0 &&
+          request.resource.data.text.size() <= 2000 &&
+          request.resource.data.createdAt == request.time &&
+          request.resource.data.isEdited == false;
+
+        allow update: if isAuthenticated() &&
+          resource.data.authorUid == request.auth.uid &&
+          request.time <= resource.data.createdAt + duration.value(15, 'm') &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'updatedAt', 'isEdited']) &&
+          request.resource.data.updatedAt == request.time &&
+          request.resource.data.isEdited == true;
+
+        allow delete: if isAuthenticated() &&
+          (resource.data.authorUid == request.auth.uid || isTeacher());
+      }
+
+      // V2 Sub-collection: Personal Progress
+      match /progress/{studentUid} {
+        allow read: if isAuthenticated() && (request.auth.uid == studentUid || isTeacher());
+        
+        allow write: if isAuthenticated() && request.auth.uid == studentUid && !isTeacher() &&
+          request.resource.data.status in ['not_started', 'in_progress', 'need_help', 'completed'];
+      }
+
+      // V3 Sub-collection: Student Submissions (Cloudinary Architecture)
+      match /submissions/{studentUid} {
+        allow read: if isAuthenticated() && (request.auth.uid == studentUid || isTeacher());
+
+        // Student submission create/update (draft or submitted only, max 3 Cloudinary file attachments)
+        allow create, update: if isAuthenticated() && request.auth.uid == studentUid && !isTeacher() &&
+          request.resource.data.status in ['draft', 'submitted'] &&
+          (!('notes' in request.resource.data) || request.resource.data.notes is string) &&
+          (!('links' in request.resource.data) || (request.resource.data.links is list && request.resource.data.links.size() <= 10)) &&
+          (!('files' in request.resource.data) || (request.resource.data.files is list && request.resource.data.files.size() <= 3));
+
+        // Teacher feedback update (feedback & status needs_revision/completed only)
+        allow update: if isTeacher() &&
+          request.resource.data.status in ['needs_revision', 'completed'] &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'teacherFeedback', 'feedbackAt', 'feedbackAtMs']) &&
+          request.resource.data.teacherFeedback is string;
+      }
+    }
+  }
+}
