@@ -3,6 +3,26 @@
 (function(window) {
   'use strict';
 
+  function formatCommentDate(cmt) {
+    if (!cmt) return '';
+    if (cmt.createdAtMs) {
+      return new Date(cmt.createdAtMs).toLocaleString('vi-VN');
+    }
+    if (cmt.createdAt) {
+      if (typeof cmt.createdAt.toDate === 'function') {
+        return cmt.createdAt.toDate().toLocaleString('vi-VN');
+      }
+      if (typeof cmt.createdAt.seconds === 'number') {
+        return new Date(cmt.createdAt.seconds * 1000).toLocaleString('vi-VN');
+      }
+      if (typeof cmt.createdAt === 'string') {
+        var d = new Date(cmt.createdAt);
+        if (!isNaN(d.getTime())) return d.toLocaleString('vi-VN');
+      }
+    }
+    return new Date().toLocaleString('vi-VN');
+  }
+
   var TaskDetailController = {
     /**
      * Mounts the Tab Container inside Task Detail modal/panel
@@ -183,7 +203,7 @@
 
             cmtItem.innerHTML = '<div class="d-flex justify-content-between align-items-center mb-1">' +
               '<div><strong>' + escapeHtml(cmt.authorName || cmt.authorEmail) + '</strong>' + roleBadgeHtml + '</div>' +
-              '<div class="text-muted small">' + escapeHtml(cmt.createdAt ? new Date(cmt.createdAt).toLocaleString('vi-VN') : '') + actionsHtml + '</div>' +
+              '<div class="text-muted small">' + escapeHtml(formatCommentDate(cmt)) + actionsHtml + '</div>' +
             '</div>' +
             '<div class="text-dark" style="white-space: pre-wrap;">' + window.CommentsManager.linkifyText(cmt.text) + '</div>';
 
@@ -400,22 +420,25 @@
               var item = document.createElement('div');
               item.className = 'border rounded p-3 mb-3 bg-white shadow-sm';
               
+              // Normalize files (supports sub.files or sub.attachments array)
+              var rawFiles = (sub.files && sub.files.length) ? sub.files : (sub.attachments || []);
               var filesHtml = '<span class="text-muted small">Không có tệp đính kèm.</span>';
-              if (sub.files && sub.files.length) {
-                filesHtml = sub.files.map(function(f) {
-                  var isZip = (f.format === 'zip') || (f.originalFilename && f.originalFilename.toLowerCase().indexOf('.zip') !== -1);
-                  var isPdf = (f.format === 'pdf') || (f.originalFilename && f.originalFilename.toLowerCase().indexOf('.pdf') !== -1);
+              
+              if (rawFiles && rawFiles.length > 0) {
+                filesHtml = rawFiles.map(function(f) {
+                  var fname = escapeHtml(f.originalFilename || f.name || 'tệp đính kèm');
+                  var rawUrl = f.secureUrl || f.url || '';
+                  var isZip = (f.format === 'zip') || (fname.toLowerCase().indexOf('.zip') !== -1);
+                  var isPdf = (f.format === 'pdf') || (fname.toLowerCase().indexOf('.pdf') !== -1);
                   var label = isZip ? 'Tải xuống' : (isPdf ? 'Xem PDF' : 'Xem tệp');
                   var icon = isZip ? 'bi-download' : (isPdf ? 'bi-file-earmark-pdf' : 'bi-eye');
                   
-                  var rawUrl = f.secureUrl || '';
                   var finalUrl = rawUrl;
                   if (isZip && rawUrl && rawUrl.indexOf('/image/upload/') !== -1 && rawUrl.indexOf('/fl_attachment/') === -1) {
                     finalUrl = rawUrl.replace('/image/upload/', '/image/upload/fl_attachment/');
                   }
 
                   var link = finalUrl ? '<a href="' + finalUrl + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary ms-2"><i class="bi ' + icon + ' me-1"></i>' + label + '</a>' : '';
-                  var fname = escapeHtml(f.originalFilename || f.name || 'tệp đính kèm');
                   var fsize = Math.round((f.bytes || f.size || 0) / 1024) + ' KB';
                   return '<div class="d-flex align-items-center justify-content-between p-2 bg-light border rounded mb-1 small">' +
                     '<div><i class="bi bi-cloud-arrow-up text-primary me-1"></i><strong>' + fname + '</strong> <span class="text-muted">(' + fsize + ')</span></div>' +
@@ -424,9 +447,11 @@
                 }).join('');
               }
 
+              // Normalize links (supports sub.links array or sub.link string)
+              var rawLinks = (sub.links && sub.links.length) ? sub.links : (sub.link ? [sub.link] : []);
               var linksHtml = 'Không có';
-              if (sub.links && sub.links.length) {
-                linksHtml = sub.links.map(function(l) {
+              if (rawLinks && rawLinks.length > 0) {
+                linksHtml = rawLinks.map(function(l) {
                   return '<a href="' + l + '" target="_blank" rel="noopener noreferrer" class="text-decoration-none"><i class="bi bi-link-45deg me-1"></i>' + escapeHtml(l) + '</a>';
                 }).join(', ');
               }
@@ -593,12 +618,12 @@
             var fname = escapeHtml(f.originalFilename || f.name);
             var fsize = Math.round((f.bytes || f.size || 0) / 1024) + ' KB';
             
-            var isZip = (f.format === 'zip') || (f.originalFilename && f.originalFilename.toLowerCase().indexOf('.zip') !== -1);
-            var isPdf = (f.format === 'pdf') || (f.originalFilename && f.originalFilename.toLowerCase().indexOf('.pdf') !== -1);
+            var isZip = (f.format === 'zip') || (fname.toLowerCase().indexOf('.zip') !== -1);
+            var isPdf = (f.format === 'pdf') || (fname.toLowerCase().indexOf('.pdf') !== -1);
             var label = isZip ? 'Tải xuống' : (isPdf ? 'Xem PDF' : 'Xem');
             var icon = isZip ? 'bi-download' : (isPdf ? 'bi-file-earmark-pdf' : 'bi-eye');
             
-            var rawUrl = f.secureUrl || '';
+            var rawUrl = f.secureUrl || f.url || '';
             var finalUrl = rawUrl;
             if (isZip && rawUrl && rawUrl.indexOf('/image/upload/') !== -1 && rawUrl.indexOf('/fl_attachment/') === -1) {
               finalUrl = rawUrl.replace('/image/upload/', '/image/upload/fl_attachment/');
@@ -679,10 +704,13 @@
             var fbText = sub.teacherFeedback ? '<div class="mt-2 pt-2 border-top"><strong>Phản hồi từ Giáo viên:</strong> ' + escapeHtml(sub.teacherFeedback) + '</div>' : '';
             statusEl.innerHTML = '<div>Trạng thái bài nộp: <span class="badge ' + stInfo.badgeClass + '">' + stInfo.label + '</span></div>' + fbText;
 
-            if (sub.links && sub.links[0]) linkInput.value = sub.links[0];
+            var rawLinks = (sub.links && sub.links[0]) ? sub.links[0] : (sub.link || '');
+            if (rawLinks) linkInput.value = rawLinks;
             if (sub.notes) notesInput.value = sub.notes;
-            if (sub.files && sub.files.length) {
-              currentFilesMeta = sub.files;
+            
+            var rawFiles = (sub.files && sub.files.length) ? sub.files : (sub.attachments || []);
+            if (rawFiles && rawFiles.length) {
+              currentFilesMeta = rawFiles;
             }
             renderFileList();
           });
