@@ -2,6 +2,7 @@
   'use strict';
 
   var STORAGE_KEY = 'JSI_TEACHER_GEMINI_KEY';
+  var AI_CACHE_PREFIX = 'JSI_AI_CACHE_';
 
   var BYOKManager = {
     getKey: function() {
@@ -26,6 +27,7 @@
     clearKey: function() {
       try {
         window.sessionStorage.removeItem(STORAGE_KEY);
+        this.clearAICache();
       } catch (e) {}
     },
 
@@ -37,6 +39,44 @@
       var k = this.getKey();
       if (!k) return '';
       return '••••••••';
+    },
+
+    // Session-scoped AI Results Cache Helpers
+    getAICache: function(cacheKey) {
+      if (!cacheKey) return null;
+      try {
+        var raw = window.sessionStorage.getItem(AI_CACHE_PREFIX + cacheKey);
+        if (!raw) return null;
+        var parsed = JSON.parse(raw);
+        return parsed ? parsed.data : null;
+      } catch (e) {
+        return null;
+      }
+    },
+
+    setAICache: function(cacheKey, data) {
+      if (!cacheKey || !data) return;
+      try {
+        var payload = JSON.stringify({ data: data, timestamp: Date.now() });
+        window.sessionStorage.setItem(AI_CACHE_PREFIX + cacheKey, payload);
+      } catch (e) {
+        console.warn('[BYOKManager] Failed to cache AI result in sessionStorage:', e);
+      }
+    },
+
+    clearAICache: function() {
+      try {
+        var keysToRemove = [];
+        for (var i = 0; i < window.sessionStorage.length; i++) {
+          var k = window.sessionStorage.key(i);
+          if (k && k.indexOf(AI_CACHE_PREFIX) === 0) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach(function(k) {
+          window.sessionStorage.removeItem(k);
+        });
+      } catch (e) {}
     },
 
     validateKeyOnline: async function(keyToValidate) {
@@ -51,7 +91,7 @@
 
       try {
         var token = await window.firebase.auth().currentUser.getIdToken();
-        var baseUrl = (window.JSI_API_CONFIG && window.JSI_API_CONFIG.baseUrl) ? window.JSI_API_CONFIG.baseUrl : 'http://localhost:5000';
+        var baseUrl = (window.JSI_API_CONFIG && window.JSI_API_CONFIG.baseUrl) ? window.JSI_API_CONFIG.baseUrl : 'https://server-v4-preview-staging.vercel.app';
         var endpoint = (window.JSI_API_CONFIG && window.JSI_API_CONFIG.endpoints && window.JSI_API_CONFIG.endpoints.teacherAssist) ? window.JSI_API_CONFIG.endpoints.teacherAssist : '/api/ai/teacher-assist';
 
         var resp = await fetch(baseUrl + endpoint, {
@@ -78,7 +118,7 @@
     }
   };
 
-  // Auto clear BYOK on Firebase logout
+  // Auto clear BYOK & AI Cache on Firebase logout
   if (typeof window !== 'undefined' && window.firebase && window.firebase.auth) {
     window.firebase.auth().onAuthStateChanged(function(user) {
       if (!user) {

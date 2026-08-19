@@ -140,6 +140,19 @@
           '</div>' +
         '</div>';
 
+      // Restore Cached AI Results from sessionStorage if present (No automatic Gemini re-call!)
+      if (window.BYOKManager) {
+        var cachedSummary = window.BYOKManager.getAICache('task_summary_' + taskId);
+        if (cachedSummary) {
+          self.renderTaskSummaryResult(container.querySelector('#ai-summary-result'), cachedSummary);
+        }
+
+        var cachedSupport = window.BYOKManager.getAICache('support_detection_' + taskId);
+        if (cachedSupport) {
+          self.renderSupportDetectionResult(container.querySelector('#ai-support-result'), cachedSupport);
+        }
+      }
+
       // Event listeners
       container.querySelector('#ai-change-key-btn').addEventListener('click', function() {
         self.renderKeyForm(container, taskId);
@@ -157,6 +170,54 @@
       container.querySelector('#ai-support-btn').addEventListener('click', function() {
         self.runSupportDetection(container, taskId);
       });
+    },
+
+    renderTaskSummaryResult: function(resultArea, d) {
+      if (!resultArea || !d) return;
+      var self = this;
+      var signalsHtml = (Array.isArray(d.notableSignals) && d.notableSignals.length > 0)
+        ? '<ul class="mb-2 ps-3 small text-secondary">' + d.notableSignals.map(function(s) { return '<li>' + self.escapeHtml(s) + '</li>'; }).join('') + '</ul>'
+        : '';
+      var actionsHtml = (Array.isArray(d.suggestedTeacherActions) && d.suggestedTeacherActions.length > 0)
+        ? '<ul class="mb-0 ps-3 small text-success fw-semibold">' + d.suggestedTeacherActions.map(function(a) { return '<li>' + self.escapeHtml(a) + '</li>'; }).join('') + '</ul>'
+        : '';
+
+      resultArea.innerHTML =
+        '<div class="alert alert-light border mb-2">' +
+          '<div class="fw-bold text-primary mb-1"><i class="bi bi-journal-check me-1"></i>' + self.escapeHtml(d.headline || 'Tóm tắt nhiệm vụ') + '</div>' +
+          '<div class="small text-dark mb-2">' + self.escapeHtml(d.progressSummary || '') + '</div>' +
+          (signalsHtml ? '<div class="fw-semibold small text-muted">Tín hiệu đáng chú ý:</div>' + signalsHtml : '') +
+          (actionsHtml ? '<div class="fw-semibold small text-muted mt-2">Gợi ý hành động:</div>' + actionsHtml : '') +
+        '</div>';
+    },
+
+    renderSupportDetectionResult: function(resultArea, d) {
+      if (!resultArea || !d) return;
+      var self = this;
+      var list = (d && Array.isArray(d.students)) ? d.students : [];
+      if (list.length === 0) {
+        resultArea.innerHTML = '<div class="alert alert-success mb-0 small"><i class="bi bi-check-circle me-1"></i>Không phát hiện học viên nào gặp khó khăn nghiêm trọng trong nhiệm vụ này.</div>';
+        return;
+      }
+
+      var cardsHtml = list.map(function(item) {
+        var badgeClass = item.priority === 'high' ? 'bg-danger' : (item.priority === 'medium' ? 'bg-warning text-dark' : 'bg-info text-dark');
+        var priorityText = item.priority === 'high' ? 'Ưu tiên cao' : (item.priority === 'medium' ? 'Ưu tiên trung bình' : 'Khác');
+        var reasons = Array.isArray(item.reasons) ? item.reasons.map(function(r) { return self.escapeHtml(r); }).join(', ') : '';
+
+        return '<div class="card border mb-2 shadow-sm">' +
+          '<div class="card-body p-2 px-3 d-flex align-items-center justify-content-between">' +
+            '<div>' +
+              '<div class="fw-bold small">' + self.escapeHtml(item.studentName) + ' <span class="text-muted font-monospace">(' + self.escapeHtml(item.studentAlias) + ')</span></div>' +
+              '<div class="text-muted super-small">' + self.escapeHtml(reasons) + '</div>' +
+              '<div class="text-success small fw-semibold mt-1"><i class="bi bi-arrow-right-short me-1"></i>' + self.escapeHtml(item.suggestedAction) + '</div>' +
+            '</div>' +
+            '<span class="badge ' + badgeClass + ' me-2">' + priorityText + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      resultArea.innerHTML = cardsHtml;
     },
 
     runTaskSummary: async function(container, taskId) {
@@ -180,20 +241,11 @@
         }
 
         var d = res.data || {};
-        var signalsHtml = (Array.isArray(d.notableSignals) && d.notableSignals.length > 0)
-          ? '<ul class="mb-2 ps-3 small text-secondary">' + d.notableSignals.map(function(s) { return '<li>' + self.escapeHtml(s) + '</li>'; }).join('') + '</ul>'
-          : '';
-        var actionsHtml = (Array.isArray(d.suggestedTeacherActions) && d.suggestedTeacherActions.length > 0)
-          ? '<ul class="mb-0 ps-3 small text-success fw-semibold">' + d.suggestedTeacherActions.map(function(a) { return '<li>' + self.escapeHtml(a) + '</li>'; }).join('') + '</ul>'
-          : '';
-
-        resultArea.innerHTML =
-          '<div class="alert alert-light border mb-2">' +
-            '<div class="fw-bold text-primary mb-1"><i class="bi bi-journal-check me-1"></i>' + self.escapeHtml(d.headline || 'Tóm tắt nhiệm vụ') + '</div>' +
-            '<div class="small text-dark mb-2">' + self.escapeHtml(d.progressSummary || '') + '</div>' +
-            (signalsHtml ? '<div class="fw-semibold small text-muted">Tín hiệu đáng chú ý:</div>' + signalsHtml : '') +
-            (actionsHtml ? '<div class="fw-semibold small text-muted mt-2">Gợi ý hành động:</div>' + actionsHtml : '') +
-          '</div>';
+        // Cache result in sessionStorage
+        if (window.BYOKManager) {
+          window.BYOKManager.setAICache('task_summary_' + taskId, d);
+        }
+        self.renderTaskSummaryResult(resultArea, d);
       } catch (err) {
         alertArea.className = 'alert alert-danger mb-3';
         alertArea.textContent = 'Không thể phân tích tóm tắt: ' + (err.message || 'Lỗi không xác định.');
@@ -224,30 +276,12 @@
           return;
         }
 
-        var list = (res.data && Array.isArray(res.data.students)) ? res.data.students : [];
-        if (list.length === 0) {
-          resultArea.innerHTML = '<div class="alert alert-success mb-0 small"><i class="bi bi-check-circle me-1"></i>Không phát hiện học viên nào gặp khó khăn nghiêm trọng trong nhiệm vụ này.</div>';
-          return;
+        var d = res.data || {};
+        // Cache result in sessionStorage
+        if (window.BYOKManager) {
+          window.BYOKManager.setAICache('support_detection_' + taskId, d);
         }
-
-        var cardsHtml = list.map(function(item) {
-          var badgeClass = item.priority === 'high' ? 'bg-danger' : (item.priority === 'medium' ? 'bg-warning text-dark' : 'bg-info text-dark');
-          var priorityText = item.priority === 'high' ? 'Ưu tiên cao' : (item.priority === 'medium' ? 'Ưu tiên trung bình' : 'Khác');
-          var reasons = Array.isArray(item.reasons) ? item.reasons.map(function(r) { return self.escapeHtml(r); }).join(', ') : '';
-
-          return '<div class="card border mb-2 shadow-sm">' +
-            '<div class="card-body p-2 px-3 d-flex align-items-center justify-content-between">' +
-              '<div>' +
-                '<div class="fw-bold small">' + self.escapeHtml(item.studentName) + ' <span class="text-muted font-monospace">(' + self.escapeHtml(item.studentAlias) + ')</span></div>' +
-                '<div class="text-muted super-small">' + self.escapeHtml(reasons) + '</div>' +
-                '<div class="text-success small fw-semibold mt-1"><i class="bi bi-arrow-right-short me-1"></i>' + self.escapeHtml(item.suggestedAction) + '</div>' +
-              '</div>' +
-              '<span class="badge ' + badgeClass + ' me-2">' + priorityText + '</span>' +
-            '</div>' +
-          '</div>';
-        }).join('');
-
-        resultArea.innerHTML = cardsHtml;
+        self.renderSupportDetectionResult(resultArea, d);
       } catch (err) {
         alertArea.className = 'alert alert-danger mb-3';
         alertArea.textContent = 'Không thể quét danh sách học viên: ' + (err.message || 'Lỗi không xác định.');
@@ -259,7 +293,20 @@
     },
 
     requestFeedbackSuggestion: async function(taskId, studentUid) {
-      return await this.callAIEndpoint('feedback_suggestion', taskId, studentUid);
+      var cacheKey = 'feedback_suggestion_' + taskId + '_' + studentUid;
+      // Check session cache first
+      if (window.BYOKManager) {
+        var cached = window.BYOKManager.getAICache(cacheKey);
+        if (cached) {
+          return { data: cached, fromCache: true };
+        }
+      }
+
+      var res = await this.callAIEndpoint('feedback_suggestion', taskId, studentUid);
+      if (res.data && window.BYOKManager) {
+        window.BYOKManager.setAICache(cacheKey, res.data);
+      }
+      return res;
     },
 
     callAIEndpoint: async function(action, taskId, studentUid) {

@@ -367,7 +367,7 @@
       }
     },
 
-    // Render V3 Cloudinary Submission Pane (Teacher Feedback + AI Suggestion Button)
+    // Render V3 Cloudinary Submission Pane (Teacher Feedback + AI Suggestion Button + Session Cache Restoration)
     renderSubmissionPane: function(task, paneEl, currentUser) {
       var role = (window.AppBridge && typeof window.AppBridge.getCurrentRole === 'function')
         ? window.AppBridge.getCurrentRole()
@@ -464,24 +464,8 @@
               var aiSpin = item.querySelector('.ai-fb-spin');
               var aiDraftArea = item.querySelector('.ai-feedback-draft-area');
 
-              // AI Feedback Suggestion Button Handler
-              aiSuggestBtn.onclick = async function() {
-                if (!window.AIAssistantController) return;
-                aiSpin.classList.remove('d-none');
-                aiSuggestBtn.disabled = true;
-
-                var res = await window.AIAssistantController.requestFeedbackSuggestion(task.id, sub.studentUid);
-                aiSpin.classList.add('d-none');
-                aiSuggestBtn.disabled = false;
-
-                if (res.error) {
-                  aiDraftArea.className = 'ai-feedback-draft-area alert alert-danger mb-2 p-2 small';
-                  aiDraftArea.textContent = res.error;
-                  aiDraftArea.classList.remove('d-none');
-                  return;
-                }
-
-                var d = res.data || {};
+              function renderDraftContent(d) {
+                if (!d) return;
                 aiDraftArea.className = 'ai-feedback-draft-area alert alert-light border border-danger mb-2 p-2 small';
                 aiDraftArea.innerHTML = '<div class="fw-bold text-danger mb-1"><i class="bi bi-stars me-1"></i>Bản thảo gợi ý từ AI:</div>' +
                   '<div class="mb-2 text-dark" style="white-space: pre-wrap;">' + escapeHtml(d.feedbackDraft || '') + '</div>' +
@@ -497,6 +481,39 @@
                     aiDraftArea.classList.add('d-none');
                     fbInput.focus();
                   };
+                }
+              }
+
+              // Restore AI Feedback Suggestion from sessionStorage if present
+              if (window.BYOKManager) {
+                var cachedFeedback = window.BYOKManager.getAICache('feedback_suggestion_' + task.id + '_' + sub.studentUid);
+                if (cachedFeedback) {
+                  renderDraftContent(cachedFeedback);
+                }
+              }
+
+              // AI Feedback Suggestion Button Handler
+              aiSuggestBtn.onclick = async function() {
+                if (!window.AIAssistantController) return;
+                aiSpin.classList.remove('d-none');
+                aiSuggestBtn.disabled = true;
+
+                try {
+                  var res = await window.AIAssistantController.requestFeedbackSuggestion(task.id, sub.studentUid);
+                  if (res.error) {
+                    aiDraftArea.className = 'ai-feedback-draft-area alert alert-danger mb-2 p-2 small';
+                    aiDraftArea.textContent = res.error;
+                    aiDraftArea.classList.remove('d-none');
+                    return;
+                  }
+                  renderDraftContent(res.data);
+                } catch (err) {
+                  aiDraftArea.className = 'ai-feedback-draft-area alert alert-danger mb-2 p-2 small';
+                  aiDraftArea.textContent = 'Không thể lấy gợi ý phản hồi: ' + (err.message || 'Lỗi không xác định.');
+                  aiDraftArea.classList.remove('d-none');
+                } finally {
+                  aiSpin.classList.add('d-none');
+                  aiSuggestBtn.disabled = false;
                 }
               };
 
