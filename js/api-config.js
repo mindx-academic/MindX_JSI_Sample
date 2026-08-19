@@ -5,6 +5,7 @@ window.JSI_API_CONFIG = {
   endpoints: {
     health: '/api/health',
     signUpload: '/api/cloudinary/sign-upload',
-    deleteAsset: '/api/cloudinary/delete'
+    deleteAsset: '/api/cloudinary/delete',
+    teacherAssist: '/api/ai/teacher-assist'
   }
 };

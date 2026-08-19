@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MindX Smart Class Manager (V3 Release - Submissions & Feedback)</title>
+  <title>MindX Smart Class Manager (V4 Exhibition Release)</title>
   
   <!-- Bootstrap 5 CSS & Icons CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- Core & V1/V2/V3 Extension Styles -->
-  <link rel="stylesheet" href="css/style.css?v=20260812-v3">
-  <link rel="stylesheet" href="css/v1-kanban.css?v=20260812-v3">
+  <!-- Core & V1/V2/V3/V4 Extension Styles -->
+  <link rel="stylesheet" href="css/style.css?v=20260819-v4">
+  <link rel="stylesheet" href="css/v1-kanban.css?v=20260819-v4">
 </head>
 <body>
 
@@ -26,7 +26,7 @@
       <!-- Brand Logo & Title -->
       <a class="navbar-brand d-flex align-items-center gap-2" href="#">
         <div class="brand-logo" style="background-color: #D32F2F; color: white; font-weight: bold; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center;">MX</div>
-        <span class="font-weight-bold" style="color: #212529; font-weight: 700; font-size: 1.1rem;">MindX Smart Class Manager <span class="badge bg-success ms-1" style="font-size: 0.75rem;">V3</span></span>
+        <span class="font-weight-bold" style="color: #212529; font-weight: 700; font-size: 1.1rem;">MindX Smart Class Manager <span class="badge bg-danger ms-1" style="font-size: 0.75rem;">V4 Exhibition</span></span>
       </a>
 
       <!-- Role-specific Navigation Links -->
@@ -49,7 +49,7 @@
         <!-- Public Nav -->
         <div id="public-nav-links" class="nav-links-group" style="display: flex; align-items: center;">
           <a href="#" class="nav-link active font-weight-bold me-3" style="color: #D32F2F;">Nhiệm vụ</a>
-          <a href="login.html?v=20260812-v3" class="btn btn-outline-danger btn-sm me-2">Đăng nhập</a>
+          <a href="login.html?v=20260819-v4" class="btn btn-outline-danger btn-sm me-2">Đăng nhập</a>
           <a href="register.html" class="btn btn-danger btn-sm" style="background-color: #D32F2F;">Đăng ký</a>
         </div>
       </div>
@@ -58,6 +58,12 @@
 
   <!-- Main Content Container -->
   <main class="container-fluid px-4 py-4" style="background-color: #F5F6FA; min-height: calc(100vh - 60px);">
+    <!-- Exhibition Notice Banner -->
+    <div class="alert alert-info border border-info-subtle shadow-sm mb-4" role="alert" style="border-radius: 8px; font-size: 0.88rem; background-color: #E8F4FD; color: #0C5460;">
+      <i class="bi bi-info-circle-fill me-2 text-info"></i>
+      <strong>Thông báo Showcase:</strong> Đây là sản phẩm showcase minh họa một sản phẩm web hoàn chỉnh mà học viên JSI Intensive có thể hướng tới. Một số tính năng mở rộng như AI Teacher Assistant là phần showcase mở rộng, không phải yêu cầu bắt buộc của chương trình.
+    </div>
+
     <!-- Kanban Mount Point -->
     <div id="kanban-board-mount-point"></div>
   </main>
@@ -75,38 +81,40 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
   <!-- Stage 2: Environment Firebase Config -->
-  <script src="js/firebase-config.js?v=20260812-v3"></script>
+  <script src="js/firebase-config.js?v=20260819-v4"></script>
 
   <!-- Stage 3: Core Auth & Role Helper -->
-  <script src="js/auth.js?v=20260812-v3"></script>
+  <script src="js/auth.js?v=20260819-v4"></script>
   <script src="js/role-helper.js"></script>
 
   <!-- Stage 4: Core Data & Firestore Modules -->
   <script src="js/task-local-data.js"></script>
   <script src="js/task-data-processing.js"></script>
-  <script src="js/task-firestore.js?v=20260812-v3"></script>
+  <script src="js/task-firestore.js?v=20260819-v4"></script>
 
   <!-- Stage 5: Task Schema Adapter & Core UI Controller -->
   <script src="js/task-schema-adapter.js"></script>
-  <script src="js/task-ui.js?v=20260812-v3"></script>
+  <script src="js/task-ui.js?v=20260819-v4"></script>
 
   <!-- Stage 6: App Bridge, Version Config & API Config -->
-  <script src="js/version-config.js?v=20260812-v3"></script>
-  <script src="js/api-config.js?v=20260812-v3"></script>
-  <script src="js/app-bridge.js?v=20260812-v3"></script>
+  <script src="js/version-config.js?v=20260819-v4"></script>
+  <script src="js/api-config.js?v=20260819-v4"></script>
+  <script src="js/app-bridge.js?v=20260819-v4"></script>
 
-  <!-- Stage 7: Extension Feature Modules (V1 + V2 + V3) -->
+  <!-- Stage 7: Extension Feature Modules (V1 + V2 + V3 + V4 AI) -->
   <script src="js/resource-detector.js"></script>
-  <script src="js/resource-manager.js?v=20260812-v3"></script>
-  <script src="js/comments-manager.js?v=20260812-v3"></script>
-  <script src="js/progress-tracker.js?v=20260812-v3"></script>
-  <script src="js/submission-manager.js?v=20260812-v3"></script>
-  <script src="js/kanban-ui.js?v=20260812-v3"></script>
-  <script src="js/task-detail-controller.js?v=20260812-v3"></script>
+  <script src="js/resource-manager.js?v=20260819-v4"></script>
+  <script src="js/comments-manager.js?v=20260819-v4"></script>
+  <script src="js/progress-tracker.js?v=20260819-v4"></script>
+  <script src="js/submission-manager.js?v=20260819-v4"></script>
+  <script src="js/byok-manager.js?v=20260819-v4"></script>
+  <script src="js/ai-assistant-controller.js?v=20260819-v4"></script>
+  <script src="js/kanban-ui.js?v=20260819-v4"></script>
+  <script src="js/task-detail-controller.js?v=20260819-v4"></script>
 
   <!-- Stage 8: Application Bootstrap & App Orchestrator -->
-  <script src="js/bootstrap.js?v=20260812-v3"></script>
-  <script src="js/app.js?v=20260812-v3"></script>
+  <script src="js/bootstrap.js?v=20260819-v4"></script>
+  <script src="js/app.js?v=20260819-v4"></script>
 
 </body>
 </html>
